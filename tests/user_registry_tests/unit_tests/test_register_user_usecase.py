@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from app.modules.auth.application.request.register_user_request import RegisterUserRequest, UserType
 from app.modules.auth.application.use_case.register_user_use_case import register_user_use_case
-from app.modules.auth.domain.entity.user import User
+from app.modules.auth.domain.entity.user import Roles, User
 from app.modules.auth.domain.repository.user_repository import UserRepositoryInterface
 
 # -------------------- Fixtures --------------------
@@ -17,7 +17,7 @@ def mock_user() -> User:
         last_name="Doe",
         email="johnlesis91@gmail.com",
         hashed_password="$argon2id$v=19$m=65536,t=3,p=4$somehash",
-        user_type="admin"
+        roles=[Roles.ADMIN]
     )
 
 @pytest.fixture(scope="function")
@@ -60,7 +60,9 @@ def test_register_user_success(
     assert registered_user.email == valid_register_user_request.email
     assert registered_user.first_name == valid_register_user_request.first_name
     assert registered_user.last_name == valid_register_user_request.last_name
-    assert registered_user.user_type == valid_register_user_request.user_type.value
+    assert registered_user.roles == [Roles.ADMIN]
+    assert len(registered_user.roles) == 1
+    assert registered_user.roles[0].value == valid_register_user_request.user_type.value
     assert registered_user.id == mock_user.id
     assert registered_user.hashed_password != valid_register_user_request.password
     

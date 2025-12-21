@@ -1,5 +1,5 @@
 from app.modules.auth.application.request.register_user_request import RegisterUserRequest
-from app.modules.auth.domain.entity.user import User
+from app.modules.auth.domain.entity.user import Roles, User
 from app.modules.auth.domain.repository.user_repository import UserRepositoryInterface
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -33,7 +33,7 @@ def register_user_use_case(request: RegisterUserRequest, user_repository: UserRe
         last_name=request.last_name,
         email=request.email,
         hashed_password=hash_password(request.password), 
-        user_type=request.user_type.value        
+        roles=[Roles(request.user_type.value)]      
     )
 
     return user_repository.persist(user)

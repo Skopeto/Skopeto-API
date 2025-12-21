@@ -2,9 +2,9 @@ from pydantic import BaseModel, EmailStr, Field
 from enum import Enum
 
 class UserType(str, Enum):
-    ADMIN = "admin"
     SUPERADMIN = "superadmin"
-    REGULAR = "regular"
+    ADMIN = "admin"
+    USER = "user"
 
 class RegisterUserRequest(BaseModel):
    user_name: str = Field(..., min_length=3, max_length=50)
@@ -12,4 +12,4 @@ class RegisterUserRequest(BaseModel):
    last_name: str = Field(..., min_length=1, max_length=50)
    email: EmailStr
    password: str = Field(..., min_length=6)
-   user_type: UserType 
+   user_type: UserType

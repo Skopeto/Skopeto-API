@@ -1,5 +1,12 @@
+import enum
 from pydantic import BaseModel
 from typing import Optional
+
+
+class Roles(enum.Enum):
+    SUPERADMIN = "superadmin"
+    ADMIN = "admin"
+    USER = "user"
 
 class User(BaseModel):
     id: str
@@ -8,6 +15,6 @@ class User(BaseModel):
     user_name: str
     email: str
     hashed_password: str
-    user_type: str  
+    roles: list[Roles]  
     is_active: Optional[bool] = True
     is_superuser: Optional[bool] = False

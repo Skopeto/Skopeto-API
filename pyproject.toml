@@ -6,12 +6,30 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "argon2-cffi>=25.1.0",
+    "asyncpg>=0.31.0",
     "asyncssh>=2.21.1",
     "bcrypt==3.2.2",
     "fastapi>=0.125.0",
     "httpx>=0.28.1",
+    "oracledb>=3.4.1",
     "passlib[bcrypt]>=1.7.4",
+    "pydantic-settings>=2.12.0",
     "pydantic[email]>=2.12.5",
     "pytest>=9.0.2",
+    "sqlalchemy>=2.0.45",
     "uvicorn>=0.38.0",
 ]
+
+[tool.pytest.ini_options]
+# 👇 Ensures pytest sees your project root and app package
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-v -s"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.pyright]
+typeCheckingMode = "basic"
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportMissingTypeStubs = false

@@ -6,8 +6,8 @@ class UserRepositoryInterface(ABC):
 
     @abstractmethod
     def get_by_username_or_email(self, username: str, email: str) -> Optional[User]:
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def persist(self, user: User) -> User:
-        pass
+        raise NotImplementedError()

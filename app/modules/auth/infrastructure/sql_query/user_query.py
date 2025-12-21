@@ -1,16 +1,16 @@
 from datetime import datetime
 from typing import Any
 
+from app.modules.auth.domain.entity.user import User
 
-def get_user_q(user_id: int) -> tuple[str, dict[str, Any]]:
+def get_user_query(user_id: int) -> tuple[str, dict[str, Any]]:
     query = "select u.* from fe_users u where user_id = :user_id"
     params = {
         'user_id': user_id  
     }
-
     return query, params
 
-def get_user_by_token_q(token: str, now_time: datetime) -> tuple[str, dict[str, Any]]:
+def get_user_by_token_query(token: str, now_time: datetime) -> tuple[str, dict[str, Any]]:
     query = """
     SELECT u.*
     FROM users u, access_tokens t
@@ -22,8 +22,7 @@ def get_user_by_token_q(token: str, now_time: datetime) -> tuple[str, dict[str, 
     params = {'token': token, 'now_time': now_time}
     return query, params
 
-
-def get_user_by_username_password(user_name: str, password: str) -> tuple[str, dict[str, Any]]:
+def get_user_by_username_password_query(user_name: str) -> tuple[str, dict[str, Any]]:
     query = """
     SELECT
     id,
@@ -34,5 +33,40 @@ def get_user_by_username_password(user_name: str, password: str) -> tuple[str, d
     WHERE user_name = :user_name
     AND password = :password
     """
-    params = {'user_name': user_name, 'password': password}
+    params = {'user_name': user_name}
     return query, params
+
+
+def create_user_query(user: User) -> tuple[str, dict[str, Any]]:
+    query = """
+    INSERT INTO USERS (
+        user_name,
+        first_name,
+        last_name,
+        email,
+        hashed_password,
+        roles,
+        is_active,
+        is_superuser
+    )
+    VALUES (
+        :user_name, :first_name, :last_name, :email, :hashed_password, :roles, :is_active, :is_superuser
+    )
+    """
+    
+    params = {
+        **user.model_dump(),
+        'roles': ','.join([role.value for role in user.roles])
+    }
+    
+    return query, params
+
+def get_user_by_username_or_email_query(username: str, email: str) -> tuple[str, dict[str, Any]]:
+    query = """
+    SELECT *
+    FROM USERS
+    WHERE user_name = :username
+    OR email = :email
+    """
+    params = {'username': username, 'email': email}
+    return query, params    

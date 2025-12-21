@@ -1,3 +1,4 @@
+import token
 from app.modules.auth.application.request.register_user_request import RegisterUserRequest
 from app.modules.auth.domain.entity.user import Roles, User
 from app.modules.auth.domain.repository.user_repository import UserRepositoryInterface
@@ -17,17 +18,19 @@ def verify_password(hashed_password: str, plain_password: str) -> bool:
     except VerifyMismatchError:
         return False
 
-def user_exists(username: str, email: str, user_repository: UserRepositoryInterface) -> bool:
-    existing_user = user_repository.get_by_username_or_email(username=username, email=email)
+def user_exists(request: RegisterUserRequest, user_repository: UserRepositoryInterface) -> bool:
+    existing_user = user_repository.get_by_username_or_email(
+        username=request.user_name,
+        email=request.email
+    )
     if existing_user:
-        raise Exception(f"User with username '{username}' or email '{email}' already exists.")
-    return True
+        raise Exception(f"User with username '{request.user_name}' or email '{request.email}' already exists.")
+    return False
 
 def register_user_use_case(request: RegisterUserRequest, user_repository: UserRepositoryInterface) -> User:
-    user_exists(username=request.user_name, email=request.email, user_repository=user_repository)
-
+    user_exists(request=request, user_repository=user_repository)
     user = User(
-        id="",
+        id=0,
         user_name=request.user_name,               
         first_name=request.first_name,
         last_name=request.last_name,
@@ -36,4 +39,4 @@ def register_user_use_case(request: RegisterUserRequest, user_repository: UserRe
         roles=[Roles(request.user_type.value)]      
     )
 
-    return user_repository.persist(user)
+    return user_repository.persist_user(user)

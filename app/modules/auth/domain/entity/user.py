@@ -9,7 +9,7 @@ class Roles(enum.Enum):
     USER = "user"
 
 class User(BaseModel):
-    id: str
+    id: int
     first_name: str
     last_name: str
     user_name: str

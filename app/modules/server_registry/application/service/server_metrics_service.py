@@ -1,0 +1,31 @@
+from app.modules.server_registry.domain.entity.server import Server
+from app.core.ssh_client import SSHClientInterface
+from app.core.encrypt import decrypt_password
+
+class ServerMetricsService:
+    def __init__(self, ssh_client: SSHClientInterface):
+        self.ssh_client = ssh_client
+    
+    async def get_server_metrics(self, server: Server) -> dict:
+        decrypted_password = decrypt_password(server.ssh_password_encrypted)
+        self.ssh_client.connect(server.ip_address, server.port, server.name, decrypted_password)
+        
+        command = (
+            "top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | cut -d'%' -f1; "
+            "free | grep Mem | awk '{print ($3/$2) * 100.0}'; "
+            "df -h / | tail -1 | awk '{print $5}' | cut -d'%' -f1; "
+            "uptime -p"
+        )
+        
+        output = self.ssh_client.execute_command(command)
+        lines = output.strip().split('\n')
+        
+        self.ssh_client.disconnect()
+        
+        return {
+            'cpu_usage': float(lines[0]) if len(lines) > 0 and lines[0] else 0.0,
+            'memory_usage': float(lines[1]) if len(lines) > 1 and lines[1] else 0.0,
+            'disk_usage': float(lines[2]) if len(lines) > 2 and lines[2] else 0.0,
+            'uptime': lines[3] if len(lines) > 3 else 'unknown',
+            'server_id': server.id
+        }

@@ -11,7 +11,7 @@ from app.modules.auth.domain.repository.user_repository import UserRepositoryInt
 @pytest.fixture
 def mock_user() -> User:
     return User(
-        id="test-user-123",
+        id=1,
         user_name="johndoe",
         first_name="John",
         last_name="Doe",

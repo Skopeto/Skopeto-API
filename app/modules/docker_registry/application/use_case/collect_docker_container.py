@@ -1,19 +1,9 @@
+from app.core.Exception import ApplicationException
 from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
 from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
-
-def server_exists_and_is_valid(
-    server_id: int,
-    server_repo: ServerRepositoryInterface
-) -> Server:
-    server = server_repo.get_server(server_id)
-    
-    if not server:
-        raise Exception(server_id)
-    
-    return server
 
 async def collect_docker_container_data_use_case(
     server_id: int, 
@@ -21,13 +11,22 @@ async def collect_docker_container_data_use_case(
     server_repository: ServerRepositoryInterface,
     docker_repository: DockerRepositoryInterface
 ) -> list[DockerContainer]:
-    server = server_exists_and_is_valid(server_id, server_repository)
+    
+    server = await server_repository.get_server(server_id)
+    
+    if not server:
+        raise ApplicationException(f"Server {server_id} not found")
+    
     docker_container_data = docker_service.get_docker_metrics(server)
     
+    if not docker_container_data:
+        raise ApplicationException(f"No containers found on server {server_id}")
+    
+    containers = [DockerContainer(**data) for data in docker_container_data]
+    
     persisted_containers = []
-    for container_data in docker_container_data:
-        docker_container = DockerContainer(**container_data)
-        persisted_container = await docker_repository.persist_docker_container(docker_container)
-        persisted_containers.append(persisted_container)
+    for container in containers:
+        persisted = await docker_repository.persist_docker_container(container)
+        persisted_containers.append(persisted)
     
     return persisted_containers

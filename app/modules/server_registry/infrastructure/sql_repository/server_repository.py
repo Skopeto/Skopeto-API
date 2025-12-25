@@ -1,19 +1,27 @@
 import datetime
 from typing import Any
+import logging
+from app.core.Exception import RepositoryException
 from app.core.base_repository import SqlBaseRepository
 from app.core.sql_query import SqlQuery
 from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.entity.server_health import ServerHealth
-from app.modules.server_registry.domain.entity.server_health import ServerHealth
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
-from app.modules.server_registry.infrastructure.sql_query.server_query import create_server_query, create_server_health_query, get_server_query
+from app.modules.server_registry.infrastructure.sql_query.server_query import (
+    create_server_query,
+    create_server_health_query,
+    get_server_query
+)
 
-def server_from_db(row: dict[str, Any] | None) -> Server:
+logger = logging.getLogger(__name__)
+
+def server_from_db(row: dict[str, Any] | None) -> Server | None:
     if not row:
-        raise Exception('Server not found')
+        return None
+    
     server_attrs = {
-        'id': row['user_id'],
-        'registator_id': row['registator_id'],
+        'id': row['server_id'],
+        'registrator_id': row['registrator_id'],
         'user_name': row['user_name'],
         'password': row['password'],
         'ip_address': row['ip_address'],
@@ -24,19 +32,30 @@ def server_from_db(row: dict[str, Any] | None) -> Server:
 
 class SqlServerRepository(ServerRepositoryInterface, SqlBaseRepository):
     async def get_server(self, server_id: int) -> Server | None:
-        query, params = get_server_query(server_id)
-        sql_query = SqlQuery(self.session, query, params)
-        return await sql_query.fetch_one(transformer=server_from_db)
+        try:
+            query, params = get_server_query(server_id)
+            sql_query = SqlQuery(self.session, query, params)
+            return await sql_query.fetch_one(transformer=server_from_db)
+        except Exception as e:
+            logger.error(f"Database error while fetching server {server_id}: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to retrieve server")
     
     async def persist_server(self, server: Server) -> Server:
-        query, params = create_server_query(server)
-        sql_query = SqlQuery(self.session, query, params)
-        await sql_query.persist()
-        return server
+        try:
+            query, params = create_server_query(server)
+            sql_query = SqlQuery(self.session, query, params)
+            await sql_query.persist()
+            return server
+        except Exception as e:
+            logger.error(f"Database error while saving server: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to save server")
     
     async def persist_server_health(self, server_health: ServerHealth) -> ServerHealth:
-        query, params = create_server_health_query(server_health)
-        sql_query = SqlQuery(self.session, query, params)
-        await sql_query.persist()
-        return server_health
-        pass
+        try:
+            query, params = create_server_health_query(server_health)
+            sql_query = SqlQuery(self.session, query, params)
+            await sql_query.persist()
+            return server_health
+        except Exception as e:
+            logger.error(f"Database error while saving server health for server {server_health.server_id}: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to save server health")

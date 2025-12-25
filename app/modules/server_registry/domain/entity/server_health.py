@@ -6,6 +6,7 @@ class HealthStatus(str, Enum):
     HEALTHY = "healthy"
     UNHEALTHY = "unhealthy"
     OFFLINE = "offline"
+    ERROR = "error"
     
 class ServerHealth(BaseModel):
     id: int | None = None

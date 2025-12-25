@@ -1,14 +1,12 @@
 from app.modules.server_registry.domain.entity.server import Server
 from app.core.ssh_client import SSHClientInterface
-from app.core.encrypt import decrypt_password
 
 class ServerMetricsService:
     def __init__(self, ssh_client: SSHClientInterface):
         self.ssh_client = ssh_client
     
     async def get_server_metrics(self, server: Server) -> dict:
-        decrypted_password = decrypt_password(server.ssh_password_encrypted)
-        self.ssh_client.connect(server.ip_address, server.port, server.name, decrypted_password)
+        self.ssh_client.connect(server)
         
         command = (
             "top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | cut -d'%' -f1; "

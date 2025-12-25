@@ -1,15 +1,12 @@
-from app.core.encrypt import decrypt_password
 from app.modules.server_registry.domain.entity.server import Server
 from app.core.ssh_client import SSHClientInterface
-from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 
 class DockerMetricService:
     def __init__(self, ssh_client: SSHClientInterface):
         self.ssh_client = ssh_client
     
     def get_docker_metrics(self, server: Server) -> list[dict]:
-        decrypted_password = decrypt_password(server.ssh_password_encrypted)
-        self.ssh_client.connect(server.ip_address, server.port, server.name, decrypted_password)
+        self.ssh_client.connect(server)
         
         command = "docker ps --format '{{.ID}}|{{.Names}}|{{.Status}}|{{.Image}}'"
         

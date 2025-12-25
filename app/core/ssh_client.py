@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 import paramiko
-from typing import Any
 from app.modules.server_registry.domain.entity.server import Server
 from app.core.encrypt import decrypt_password
 
 class SSHClientInterface(ABC):
     @abstractmethod
-    def connect(self, host: str, port: int, username: str, password: str) -> None:
+    def connect(self, server: Server) -> None:
         pass
     
     @abstractmethod
@@ -21,14 +20,16 @@ class SSHClient(SSHClientInterface):
     def __init__(self):
         self.client = None
     
-    def connect(self, host: str, port: int, username: str, password: str) -> None:
+    def connect(self, server: Server) -> None:
+        decrypted_password = decrypt_password(server.ssh_password_encrypted)
+        
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.client.connect(
-            hostname=host,
-            port=port,
-            username=username,
-            password=password,
+            hostname=server.ip_address,
+            port=server.port,
+            username=server.user_name,
+            password=decrypted_password,
             timeout=10
         )
     

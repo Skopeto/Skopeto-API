@@ -13,7 +13,7 @@ def hash_password(password: str) -> str:
 
 def register_server_use_case(request: RegisterServerLocationRequest, server_repository: ServerRepositoryInterface) -> Server:
     server = Server(
-        name=request.name,
+        user_name=request.name,
         ssh_password_encrypted=encrypt_password(request.password),
         ip_address=str(request.ip_address),
         port=request.port,

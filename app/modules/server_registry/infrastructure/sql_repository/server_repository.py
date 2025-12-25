@@ -14,7 +14,7 @@ def server_from_db(row: dict[str, Any] | None) -> Server:
     server_attrs = {
         'id': row['user_id'],
         'registator_id': row['registator_id'],
-        'name': row['name'],
+        'user_name': row['user_name'],
         'password': row['password'],
         'ip_address': row['ip_address'],
         'port': row['port'],

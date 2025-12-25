@@ -11,7 +11,7 @@ def hash_password(password: str) -> str:
     truncated = password[:72]
     return password_hasher.hash(truncated)
 
-def register_server_use_case(request: RegisterServerLocationRequest, server_repository: ServerRepositoryInterface) -> Server:
+async def register_server_use_case(request: RegisterServerLocationRequest, server_repository: ServerRepositoryInterface) -> Server:
     server = Server(
         user_name=request.name,
         ssh_password_encrypted=encrypt_password(request.password),
@@ -19,4 +19,4 @@ def register_server_use_case(request: RegisterServerLocationRequest, server_repo
         port=request.port,
         status=request.status
     )
-    return server_repository.persist_server(server)
+    return await server_repository.persist_server(server)

@@ -5,3 +5,11 @@ class DockerRepositoryInterface(ABC):
     @abstractmethod
     async def persist_docker_container(self, docker_container: DockerContainer) -> DockerContainer:
         raise NotImplementedError()
+    
+    @abstractmethod
+    async def update_docker_container(self, docker_container: DockerContainer) -> DockerContainer:
+        raise NotImplementedError()
+    
+    @abstractmethod
+    async def get_docker_container(self,container_id:str, server_id: int) -> DockerContainer |None:
+        raise NotImplementedError()

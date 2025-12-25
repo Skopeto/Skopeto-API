@@ -26,7 +26,11 @@ async def collect_docker_container_data_use_case(
     
     persisted_containers = []
     for container in containers:
-        persisted = await docker_repository.persist_docker_container(container)
+        existing = await docker_repository.get_docker_container(container.container_id, server_id)
+        if existing:
+            persisted = await docker_repository.update_docker_container(container)
+        else: persisted = await docker_repository.persist_docker_container(container)
+        
         persisted_containers.append(persisted)
     
     return persisted_containers

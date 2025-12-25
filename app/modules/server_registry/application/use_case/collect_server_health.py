@@ -4,6 +4,7 @@ from app.core.Exception import ApplicationException, SSHConnectionException
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
 from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
+from app.modules.server_registry.domain.entity.server_history import HealthStatushistory, ServerHistory
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
 
 class ServerWithHealth(BaseModel):
@@ -33,6 +34,15 @@ async def collect_server_health_use_case(
             uptime=metrics.get('uptime'),
             checked_at=datetime.now(timezone.utc)
         )
+        server_history = ServerHistory(
+            server_id=server_id,
+            status=HealthStatushistory.HEALTHY,
+            cpu_usage=metrics.get('cpu_usage'),
+            memory_usage=metrics.get('memory_usage'),
+            disk_usage=metrics.get('disk_usage'),
+            uptime=metrics.get('uptime'),
+            checked_at=datetime.now(timezone.utc)
+        )
     except SSHConnectionException:
         server_health = ServerHealth(
             server_id=server_id,
@@ -46,7 +56,14 @@ async def collect_server_health_use_case(
             checked_at=datetime.now(timezone.utc)
         )
     
-    await server_repository.persist_server_health(server_health)
+    existing = await server_repository.get_server_health(server_id)
+    
+    if existing:
+        await server_repository.update_server_health(server_health)
+    else:
+        await server_repository.persist_server_health(server_health)
+    
+    await server_repository.persist_server_health_history(server_history)
     
     return ServerWithHealth(
         server=server,

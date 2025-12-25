@@ -1,6 +1,7 @@
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from app.core.Exception import ApplicationException, SecurityException
+from app.modules.auth.application.request.login_request import LoginRequest
 from app.modules.auth.application.service.create_access_token import create_access_token
 from app.modules.auth.domain.entity.token import Token
 from app.modules.auth.domain.repository.user_repository import UserRepositoryInterface
@@ -9,17 +10,16 @@ from datetime import datetime, timedelta, timezone
 password_hasher = PasswordHasher()
 
 def user_login_use_case(
-    username: str, 
-    password: str, 
+    request: LoginRequest,
     user_repository: UserRepositoryInterface,
 ) -> dict:
-    user = user_repository.get_by_username(username)
+    user = user_repository.get_by_username(request.username)
     
     if not user:
         raise SecurityException("Invalid username credentials")
     
     try:
-        password_hasher.verify(user.hashed_password, password)
+        password_hasher.verify(user.hashed_password, request.password)
     except VerifyMismatchError:
         raise SecurityException("Invalid password credentials")
     

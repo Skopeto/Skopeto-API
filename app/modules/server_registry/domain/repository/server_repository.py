@@ -5,6 +5,10 @@ from app.modules.server_registry.domain.entity.server_history import ServerHisto
 
 class ServerRepositoryInterface(ABC):
     @abstractmethod
+    async def get_all_servers(self) -> list[Server]:
+        raise NotImplementedError()
+    
+    @abstractmethod
     async def persist_server(self, server: Server) -> Server:
         raise NotImplementedError()
     

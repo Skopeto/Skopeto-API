@@ -23,15 +23,3 @@ def register(
 @router.get("/auth/me")
 async def get_me(current_user: User = Depends(get_current_user)):
     return {"status": "success", "data": current_user}
-
-@router.post("/servers/register")
-def register_server(
-    request: RegisterServerLocationRequest,
-    server_repository: ServerRepositoryInterface = Depends(get_server_repository),
-    current_user: User = Depends(get_current_user)
-):
-    if request.registrator_id != current_user.id:
-        raise SecurityException("Cannot register server for another user")
-    
-    server = register_server_use_case(request, server_repository)
-    return {"status": "success", "data": server}

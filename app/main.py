@@ -1,19 +1,34 @@
 import logging
+import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.api.routes import auth, servers
 from app.core.Exception import AppBaseException
+from app.core.scheduler import start_scheduler, stop_scheduler
+
+os.makedirs("logs", exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("app.log"),
+        logging.FileHandler("logs/app.log"),
         logging.StreamHandler()
     ]
 )
 
-app = FastAPI()
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Application starting up...")
+    start_scheduler()
+    yield
+    logger.info("Application shutting down...")
+    stop_scheduler()
+
+app = FastAPI(lifespan=lifespan)
 
 @app.exception_handler(AppBaseException)
 async def app_exception_handler(request: Request, exc: AppBaseException):
@@ -28,3 +43,5 @@ app.include_router(servers.router)
 @app.get("/")
 def root():
     return {"status": "ok"}
+
+logger.info("FastAPI application initialized")

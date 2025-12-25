@@ -7,5 +7,5 @@ from app.core.db_session import SessionDep
 def get_server_repository(session: SessionDep) -> ServerRepositoryInterface:
     return SqlServerRepository(session)
 
-# def get_server_metrics_service() -> ServerMetricsService:
-#     return ServerMetricsService(get_ssh_client())
+def get_server_metrics_service() -> ServerMetricsService:
+    return ServerMetricsService(get_ssh_client())

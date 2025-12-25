@@ -98,3 +98,10 @@ def create_health_history_query(server_history: ServerHistory) -> tuple[str, dic
     }
     return query, params
 
+def get_all_servers_query() -> tuple[str, dict[str, Any]]:
+    query = """
+        SELECT * FROM servers
+    """
+    params = {}
+    return query, params
+

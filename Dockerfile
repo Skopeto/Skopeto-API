@@ -1,6 +1,7 @@
 # Use Python 3.12 slim image
 FROM python:3.12-slim
 
+LABEL maintainer "Fatjon Lleshi - johnlesis91@gmail.com"
 # Set working directory
 WORKDIR /app
 
@@ -18,18 +19,23 @@ RUN apt-get update && apt-get install -y \
 # Copy pyproject.toml
 COPY pyproject.toml ./
 
-# Install Python dependencies using uv or pip
-RUN pip install --upgrade pip && \
-    pip install -e .
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copy pyproject.toml and uv.lock
+COPY pyproject.toml uv.lock* ./
+
+# Install dependencies with uv sync
+RUN uv sync --frozen --no-dev
 
 # Copy application code
 COPY ./app /app/app
 
-# Create logs directory
-RUN mkdir -p /app/logs
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && chmod 777 /app/logs
 
 # Expose port
 EXPOSE 8000
 
 # Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

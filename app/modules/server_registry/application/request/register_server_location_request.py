@@ -7,4 +7,4 @@ class RegisterServerLocationRequest(BaseModel):
     password: str
     ip_address: IPvAnyAddress
     port: int
-    status: ServerStatus
+    status: ServerStatus =  ServerStatus.INACTIVE

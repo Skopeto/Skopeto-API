@@ -115,8 +115,8 @@ class SqlServerRepository(ServerRepositoryInterface, SqlBaseRepository):
             query, params = get_all_servers_query()
             sql_query = SqlQuery(self.session, query, params)
             rows = await sql_query.fetch_all()
-            servers =  [server_from_db(row) for row in rows]
-            return [s for s in servers if s is not None]
+            servers = [server_from_db(row) for row in rows]
+            return list(filter(None, servers))
         except Exception as e:
             logger.error(f"Database error while fetching all servers: {str(e)}", exc_info=True)
             raise RepositoryException("Failed to retrieve servers")

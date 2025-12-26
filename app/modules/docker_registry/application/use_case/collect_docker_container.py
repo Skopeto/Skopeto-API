@@ -17,7 +17,7 @@ async def collect_docker_container_data_use_case(
     if not server:
         raise ApplicationException(f"Server {server_id} not found")
     
-    docker_container_data = docker_service.get_docker_metrics(server)
+    docker_container_data = await docker_service.get_docker_metrics(server)
     
     if not docker_container_data:
         raise ApplicationException(f"No containers found on server {server_id}")

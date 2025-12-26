@@ -4,15 +4,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class DockerMetricService:  # Fixed: was DockerMetricsService
+class DockerMetricService:
     def __init__(self, ssh_client: SSHClientInterface):
         self.ssh_client = ssh_client
     
-    def get_docker_metrics(self, server: Server) -> list[dict]:
+    async def get_docker_metrics(self, server: Server) -> list[dict]:
         try:
             self.ssh_client.connect(server)
             
-            # Add {{.Ports}} to the format
             command = "docker ps --format '{{.ID}}|{{.Names}}|{{.Status}}|{{.Image}}|{{.Ports}}'"
             output = self.ssh_client.execute_command(command)
             
@@ -20,14 +19,14 @@ class DockerMetricService:  # Fixed: was DockerMetricsService
             for line in output.strip().split('\n'):
                 if line:
                     parts = line.split('|')
-                    if len(parts) == 5:  # Now expecting 5 parts
+                    if len(parts) == 5:  
                         container_id, name, status, image, ports = parts
                         containers.append({
                             'container_id': container_id,
                             'name': name, 
                             'status': self._parse_status(status), 
                             'image': image,
-                            'ports': ports,  # Add this
+                            'ports': ports, 
                             'server_id': server.id
                         })
             
@@ -39,7 +38,7 @@ class DockerMetricService:  # Fixed: was DockerMetricsService
             self.ssh_client.disconnect()
             return []
     
-    def _parse_status(self, status_str: str) -> str:  # Indent this inside the class
+    def _parse_status(self, status_str: str) -> str: 
         if status_str.startswith('Up'):
             return 'running'
         elif 'Exited' in status_str:

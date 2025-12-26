@@ -1,3 +1,4 @@
+import logging
 from pydantic import BaseModel
 from datetime import datetime, timezone
 from app.core.Exception import ApplicationException, SSHConnectionException
@@ -6,6 +7,7 @@ from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
 from app.modules.server_registry.domain.entity.server_history import HealthStatushistory, ServerHistory
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
+logger = logging.getLogger(__name__)
 
 class ServerWithHealth(BaseModel):
     server: Server
@@ -44,15 +46,26 @@ async def collect_server_health_use_case(
             checked_at=datetime.now(timezone.utc)
         )
     except SSHConnectionException:
-        server_health = ServerHealth(
-            server_id=server_id,
-            status=HealthStatus.OFFLINE,
-            checked_at=datetime.now(timezone.utc)
-        )
-    except Exception:
+            server_health = ServerHealth(
+                server_id=server_id,
+                status=HealthStatus.OFFLINE,
+                checked_at=datetime.now(timezone.utc)
+            )
+            server_history = ServerHistory( 
+                server_id=server_id,
+                status=HealthStatushistory.OFFLINE,
+                checked_at=datetime.now(timezone.utc)
+            )
+    except Exception as e:
+        logger.error(f"Failed to collect metrics for {server.ip_address}: {e}", exc_info=True)
         server_health = ServerHealth(
             server_id=server_id,
             status=HealthStatus.ERROR,
+            checked_at=datetime.now(timezone.utc)
+        )
+        server_history = ServerHistory(
+            server_id=server_id,
+            status=HealthStatushistory.ERROR,
             checked_at=datetime.now(timezone.utc)
         )
     

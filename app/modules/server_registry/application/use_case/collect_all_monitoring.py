@@ -35,7 +35,7 @@ async def collect_all_servers_monitoring_use_case(
         if not server.id:
             continue
         
-        server_history = None  # Initialize here
+        server_history = None 
         
         try:
             metrics = await server_metrics_service.get_server_metrics(server)
@@ -94,7 +94,7 @@ async def collect_all_servers_monitoring_use_case(
         containers = []
         if server_health.status == HealthStatus.HEALTHY:
             try:
-                docker_data = docker_metrics_service.get_docker_metrics(server)
+                docker_data = await docker_metrics_service.get_docker_metrics(server)
                 
                 for container_data in docker_data:
                     container = DockerContainer(**container_data)

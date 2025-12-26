@@ -6,9 +6,9 @@ from app.modules.server_registry.domain.entity.server_health import ServerHealth
 from app.modules.server_registry.domain.entity.server_history import ServerHistory
 
 def get_server_query(server_id: int) -> tuple[str, dict[str, Any]]:
-    query = "select s.* from servers s where server_id = :server_id"
+    query = "select s.* from servers s where id = :id"
     params = {
-        'server_id': server_id  
+        'id': server_id  
     }
     return query, params
 
@@ -59,12 +59,12 @@ def create_server_health_query(server_health: ServerHealth) -> tuple[str, dict[s
     """
     params = {
         'server_id': server_health.server_id,
-        'status': server_health.status.value,  # Convert enum to string
+        'status': server_health.status.value, 
         'cpu_usage': server_health.cpu_usage,
         'memory_usage': server_health.memory_usage,
         'disk_usage': server_health.disk_usage,
         'uptime': server_health.uptime,
-        'checked_at': server_health.checked_at.replace(tzinfo=None) if server_health.checked_at else None  # Remove timezone
+        'checked_at': server_health.checked_at.replace(tzinfo=None) if server_health.checked_at else None 
     }
     return query, params
 
@@ -108,7 +108,7 @@ def create_health_history_query(server_history: ServerHistory) -> tuple[str, dic
     """
     params = {
         'server_id': server_history.server_id,
-        'status': server_history.status.value,  # Convert enum to string
+        'status': server_history.status.value, 
         'cpu_usage': server_history.cpu_usage,
         'memory_usage': server_history.memory_usage,
         'disk_usage': server_history.disk_usage,

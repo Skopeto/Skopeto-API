@@ -421,7 +421,10 @@ Retrieve all servers with their current health status and associated containers.
 - `current_health` can be `null` if no health check has been performed yet
 - `containers` array will be empty if no containers exist on the server
 - This endpoint does NOT trigger new health checks - it returns stored data
-- Use `POST /servers/monitoring/collect-all` to trigger fresh metrics collection
+- **Important:** May include containers that have been deleted but not yet removed from the database
+- Containers are identified by `name` (not `container_id`) to handle container restarts correctly
+- When a container is stopped and restarted, Docker assigns a new container_id but keeps the same name
+- Use `POST /servers/monitoring/collect-all` to trigger fresh metrics collection and update the database
 
 ---
 

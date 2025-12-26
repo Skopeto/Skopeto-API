@@ -5,7 +5,7 @@ from app.core.base_repository import SqlBaseRepository
 from app.core.sql_query import SqlQuery
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
-from app.modules.docker_registry.infrastructure.sql_query.docker_query import create_docker_container_query, get_docker_container_query, get_docker_containers_query, update_docker_container_query
+from app.modules.docker_registry.infrastructure.sql_query.docker_query import create_docker_container_query, get_docker_container_query, get_docker_container_query, get_docker_containers_query, update_docker_container_query
 logger = logging.getLogger(__name__)
 
 def container_from_db(row: dict[str, Any] | None) -> DockerContainer | None:
@@ -31,9 +31,9 @@ def container_from_db(row: dict[str, Any] | None) -> DockerContainer | None:
 
 class SqlDockerRepository(DockerRepositoryInterface, SqlBaseRepository):
 
-    async def get_docker_container(self, container_id: str, server_id: int) -> DockerContainer | None:
+    async def get_docker_container(self,name: str, server_id: int) -> DockerContainer | None:
         try:
-            query, params = get_docker_container_query(container_id, server_id)
+            query, params = get_docker_container_query(name, server_id)
             sql_query = SqlQuery(self.session, query, params)
             row = await sql_query.fetch_one(transformer=container_from_db)
             return row

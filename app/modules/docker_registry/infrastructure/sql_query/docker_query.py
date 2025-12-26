@@ -2,13 +2,13 @@ from datetime import datetime
 from typing import Any
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 
-def get_docker_container_query(container_id: str, server_id: int) -> tuple[str, dict[str, Any]]:
+def get_docker_container_query(name: str, server_id: int) -> tuple[str, dict[str, Any]]:
     query = """
         SELECT * FROM docker_containers 
         WHERE server_id = :server_id 
-        AND container_id = :container_id
+        AND name = :name
     """
-    params = {"server_id": server_id, "container_id": container_id}
+    params = {"server_id": server_id, 'name': name}
     return query, params
 
 def create_docker_container_query(container: DockerContainer) -> tuple[str, dict[str, Any]]:
@@ -48,7 +48,7 @@ def update_docker_container_query(container: DockerContainer) -> tuple[str, dict
     query = """
         UPDATE docker_containers
         SET
-            name = :name,
+            container_id = :container_id,
             image = :image,
             status = :status,
             ports = :ports,
@@ -57,7 +57,7 @@ def update_docker_container_query(container: DockerContainer) -> tuple[str, dict
             is_healthy = :is_healthy,
             last_seen_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
-        WHERE container_id = :container_id
+        WHERE name = :name
         AND server_id = :server_id
     """
     params = {
@@ -76,4 +76,27 @@ def update_docker_container_query(container: DockerContainer) -> tuple[str, dict
 def get_docker_containers_query(server_id: int) -> tuple[str, dict[str, Any]]:
     query = "SELECT * FROM docker_containers WHERE server_id = :server_id"
     params = {"server_id": server_id}
+    return query, params
+
+def delete_duplicate_containers_query() -> tuple[str, dict[str, Any]]:
+    query = """
+        DELETE FROM docker_containers
+        WHERE id IN (
+            SELECT id FROM (
+                SELECT id,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY server_id, name
+                        ORDER BY created_at DESC
+                    ) as rn
+                FROM docker_containers
+            ) t
+            WHERE t.rn > 1
+        )
+    """
+    params = {}
+    return query, params
+
+def delete_all_containers_query() -> tuple[str, dict[str, Any]]:
+    query = "DELETE FROM docker_containers"
+    params = {}
     return query, params

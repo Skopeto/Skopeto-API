@@ -100,7 +100,7 @@ async def collect_all_servers_monitoring_use_case(
                     container = DockerContainer(**container_data)
 
                     existing_container = await docker_repository.get_docker_container(
-                        container.container_id,
+                        container.name,
                         server.id
                     )
 

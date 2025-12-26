@@ -2,13 +2,24 @@
 
 ## Server Monitoring Tool
 
+# Skopeto
+## Server Monitoring Tool
+
 Open-source server and container monitoring with SSH health checks.
-Built with FastApi! (first python project, take it easy on me)
-Front-End is Vue, however, with me not being a front end developer,
-it's there to just serve only one purpose and that is to provide an interface for our API
+
+Built with FastAPI! (first python project, take it easy on me)
+
+This project was born out of necessity having to monitor multiple containers in different servers  
+and having to sometimes debug the server resources themselves  
+its my plan to also add database health check analysis, container management  
+and different methods of monitoring not just SSH
+
+Front-End is Vue, however, with me not being a front end developer,  
+it's there to just serve only one purpose and that is to provide an interface for our API  
 you will find the mostly AI made UI in https://github.com/Skopeto/Skopeto-UI.git (dont judge me pls)
-Other technologys, that i make use of, some critical and some not so much are Docker, SSH, uv package manager,
-And of course the nice, lightweight image of Postgres.
+
+Other technologies that I make use of, some critical and some not so much are Docker, SSH, uv package manager,  
+and of course the nice, lightweight image of Postgres.
 
 ![GitHub stars](https://img.shields.io/github/stars/Skopeto/Skopeto-API)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)

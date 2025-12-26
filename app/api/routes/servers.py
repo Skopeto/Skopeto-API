@@ -63,7 +63,7 @@ async def collect_all_monitoring(
     )
     return {"status": "success", "data": results}
 
-@router.post("/servers/containers/all")
+@router.post("/containers/all")
 async def get_all_servers_containers(
     current_user: User = Depends(get_current_user),
     server_repo: ServerRepositoryInterface = Depends(get_server_repository),

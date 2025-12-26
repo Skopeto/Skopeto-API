@@ -3,8 +3,8 @@ from jose import jwt
 import os
 from app.modules.auth.domain.entity.user import User
 
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
-ALGORITHM = "HS256"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-key")
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 
 def create_access_token(user: User, expires_delta: timedelta) -> str:
     to_encode = {

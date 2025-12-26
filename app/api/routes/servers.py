@@ -16,7 +16,7 @@ from app.modules.server_registry.infrastructure.dependencies.dependencies import
 router = APIRouter(prefix="/servers", tags=["Servers"])
 
 @router.post("/register")
-def register_server(
+async def register_server(  # Add async
     request: RegisterServerLocationRequest,
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
     current_user: User = Depends(get_current_user)
@@ -24,17 +24,16 @@ def register_server(
     if request.registrator_id != current_user.id:
         raise SecurityException("Cannot register server for another user")
     
-    server = register_server_use_case(request, server_repository)
+    server = await register_server_use_case(request, server_repository)  # Add await if it's async
     return {"status": "success", "data": server}
 
 @router.get("/server-health/{server_id}")
-async def get_server_health(
+async def get_server_health(  # Already async, good
     server_id: int,
     current_user: User = Depends(get_current_user),
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
     ssh_client: ServerMetricsService = Depends(get_ssh_client)
 ):
-    
     server_health = await collect_server_health_use_case(server_id, server_repository, ssh_client)
     return server_health
 

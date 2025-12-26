@@ -10,8 +10,8 @@ def hash_password(password: str) -> str:
     truncated = password[:72]
     return password_hasher.hash(truncated)
 
-def user_exists(request: RegisterUserRequest, user_repository: UserRepositoryInterface) -> None:
-    existing_user = user_repository.get_by_username_or_email(
+async def user_exists(request: RegisterUserRequest, user_repository: UserRepositoryInterface) -> None:
+    existing_user = await user_repository.get_by_username_or_email(
         username=request.user_name,
         email=request.email
     )
@@ -19,8 +19,8 @@ def user_exists(request: RegisterUserRequest, user_repository: UserRepositoryInt
     if existing_user:
         raise ApplicationException(f"User with username '{request.user_name}' or email '{request.email}' already exists.")
 
-def register_user_use_case(request: RegisterUserRequest, user_repository: UserRepositoryInterface) -> User:
-    user_exists(request=request, user_repository=user_repository)
+async def register_user_use_case(request: RegisterUserRequest, user_repository: UserRepositoryInterface) -> User:
+    await user_exists(request=request, user_repository=user_repository)
     
     user = User(
         id=0,
@@ -32,7 +32,7 @@ def register_user_use_case(request: RegisterUserRequest, user_repository: UserRe
         roles=[Roles(request.user_type.value)]      
     )
     
-    persisted_user = user_repository.persist_user(user)
+    persisted_user = await user_repository.persist_user(user)
     
     if not persisted_user:
         raise ApplicationException('Failed to persist user')

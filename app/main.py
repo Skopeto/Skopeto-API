@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from app.api.routes import auth, servers
 from app.core.Exception import AppBaseException
 from app.core.scheduler import start_scheduler, stop_scheduler
+from fastapi.middleware.cors import CORSMiddleware
 
 os.makedirs("logs", exist_ok=True)
 
@@ -29,6 +30,15 @@ async def lifespan(app: FastAPI):
     stop_scheduler()
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.exception_handler(AppBaseException)
 async def app_exception_handler(request: Request, exc: AppBaseException):

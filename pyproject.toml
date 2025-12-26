@@ -13,7 +13,6 @@ dependencies = [
     "cryptography>=46.0.3",
     "fastapi>=0.125.0",
     "httpx>=0.28.1",
-    "oracledb>=3.4.1",
     "paramiko>=4.0.0",
     "passlib[bcrypt]>=1.7.4",
     "pydantic-settings>=2.12.0",

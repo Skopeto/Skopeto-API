@@ -1,5 +1,8 @@
 from app.modules.server_registry.domain.entity.server import Server
 from app.core.ssh_client import SSHClientInterface
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ServerMetricsService:
     def __init__(self, ssh_client: SSHClientInterface):
@@ -20,10 +23,17 @@ class ServerMetricsService:
         
         self.ssh_client.disconnect()
         
+        def parse_float(value: str) -> float:
+            """Handle both dot and comma as decimal separator"""
+            try:
+                return float(value.replace(',', '.'))
+            except (ValueError, AttributeError):
+                return 0.0
+        
         return {
-            'cpu_usage': float(lines[0]) if len(lines) > 0 and lines[0] else 0.0,
-            'memory_usage': float(lines[1]) if len(lines) > 1 and lines[1] else 0.0,
-            'disk_usage': float(lines[2]) if len(lines) > 2 and lines[2] else 0.0,
+            'cpu_usage': parse_float(lines[0]) if len(lines) > 0 else 0.0,
+            'memory_usage': parse_float(lines[1]) if len(lines) > 1 else 0.0,
+            'disk_usage': parse_float(lines[2]) if len(lines) > 2 else 0.0,
             'uptime': lines[3] if len(lines) > 3 else 'unknown',
             'server_id': server.id
         }

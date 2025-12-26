@@ -1,14 +1,16 @@
 from pydantic import BaseModel
 from datetime import datetime, timezone
 from app.core.Exception import ApplicationException, SSHConnectionException
-from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
 from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
+from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
 from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 from app.modules.server_registry.domain.entity.server_history import HealthStatushistory, ServerHistory
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
+import logging
+logger = logging.getLogger(__name__)
 
 class ServerMonitoringResult(BaseModel):
     server: Server
@@ -32,8 +34,10 @@ async def collect_all_servers_monitoring_use_case(
     for server in servers:
         if not server.id:
             continue
+        
+        server_history = None  # Initialize here
+        
         try:
-            
             metrics = await server_metrics_service.get_server_metrics(server)
             
             server_health = ServerHealth(
@@ -53,29 +57,40 @@ async def collect_all_servers_monitoring_use_case(
                 disk_usage=metrics.get('disk_usage'),
                 uptime=metrics.get('uptime'),
                 checked_at=datetime.now(timezone.utc)
-        )
+            )
         except SSHConnectionException:
             server_health = ServerHealth(
                 server_id=server.id,
                 status=HealthStatus.OFFLINE,
                 checked_at=datetime.now(timezone.utc)
             )
-        except Exception:
+            server_history = ServerHistory(  # Add this
+                server_id=server.id,
+                status=HealthStatushistory.OFFLINE,
+                checked_at=datetime.now(timezone.utc)
+            )
+        except Exception as e:
+            logger.error(f"Failed to collect metrics for {server.ip_address}: {e}", exc_info=True)
             server_health = ServerHealth(
                 server_id=server.id,
                 status=HealthStatus.ERROR,
+                checked_at=datetime.now(timezone.utc)
+            )
+            server_history = ServerHistory(
+                server_id=server.id,
+                status=HealthStatushistory.ERROR,
                 checked_at=datetime.now(timezone.utc)
             )
         
         existing_health = await server_repository.get_server_health(server.id)
         
         if existing_health:
-            await server_repository.update_server_health(server_health)
+            await server_repository.update_server_health(server.id, server_health)
         else:
             await server_repository.persist_server_health(server_health)
         
         await server_repository.persist_server_health_history(server_history)
-        
+
         containers = []
         if server_health.status == HealthStatus.HEALTHY:
             try:
@@ -96,6 +111,7 @@ async def collect_all_servers_monitoring_use_case(
                     
                     containers.append(persisted)
             except Exception as e:
+                logger.error(f"Failed to collect containers for {server.ip_address}: {e}", exc_info=True)
                 pass
         
         results.append(ServerMonitoringResult(

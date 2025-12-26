@@ -10,26 +10,14 @@ build/
 .venv/
 venv/
 docker
-
-# Environment files
+.git
+.gitignore
 .env
-.env.local
-.env.*.local
-
-# Logs
+.env.*
+!.env.example
+*.md
 logs/
 *.log
-
-# IDE
+.DS_Store
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Docker volumes
-oracle-data/

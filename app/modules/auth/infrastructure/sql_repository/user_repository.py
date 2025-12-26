@@ -4,11 +4,11 @@ import logging
 from app.core.Exception import RepositoryException
 from app.core.base_repository import SqlBaseRepository
 from app.core.sql_query import SqlQuery
-from app.modules.auth.domain.entity.user import User
+from app.modules.auth.domain.entity.user import Roles, User
 from app.modules.auth.domain.repository.user_repository import UserRepositoryInterface
 from app.modules.auth.infrastructure.sql_query.user_query import (
     create_user_query,
-    get_user_by_username_password_query,
+    get_user_by_username_query,
     get_user_query,
     get_user_by_token_query,
     get_user_by_username_or_email_query
@@ -16,14 +16,31 @@ from app.modules.auth.infrastructure.sql_query.user_query import (
 
 logger = logging.getLogger(__name__)
 
+import json
+
 def user_from_db(row: dict[str, Any] | None) -> User | None:
     if not row:
         return None
     
+    roles_data = row.get('roles', [])
+    if isinstance(roles_data, str):
+        try:
+            roles_data = json.loads(roles_data)
+        except:
+            roles_data = [roles_data]
+    
+    roles = [Roles(r) if isinstance(r, str) else r for r in roles_data]
+    
     user_attrs = {
-        'id': row['user_id'],
-        'username': row['user_name'],
+        'id': row['id'],
+        'user_name': row['user_name'],
+        'first_name': row.get('first_name'),
+        'last_name': row.get('last_name'),
+        'email': row['email'],
+        'hashed_password': row['hashed_password'],
+        'roles': roles,
     }
+    
     return User.model_construct(**user_attrs)
 
 class SqlUserRepository(UserRepositoryInterface, SqlBaseRepository):
@@ -59,7 +76,7 @@ class SqlUserRepository(UserRepositoryInterface, SqlBaseRepository):
     
     async def get_by_username(self, username: str) -> User | None:
         try:
-            query, params = get_user_by_username_password_query(username)
+            query, params = get_user_by_username_query(username)
             sql_query = SqlQuery(self.session, query, params)
             user = await sql_query.fetch_one(transformer=user_from_db)
             return user

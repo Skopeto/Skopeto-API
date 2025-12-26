@@ -9,11 +9,11 @@ from datetime import datetime, timedelta, timezone
 
 password_hasher = PasswordHasher()
 
-def user_login_use_case(
+async def user_login_use_case(
     request: LoginRequest,
     user_repository: UserRepositoryInterface,
 ) -> dict:
-    user = user_repository.get_by_username(request.username)
+    user = await user_repository.get_by_username(request.username)  # Add await here
     
     if not user:
         raise SecurityException("Invalid username credentials")

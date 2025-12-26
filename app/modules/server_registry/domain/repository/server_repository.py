@@ -25,7 +25,7 @@ class ServerRepositoryInterface(ABC):
         raise NotImplementedError()
     
     @abstractmethod
-    async def update_server_health(self, server_health: ServerHealth) -> ServerHealth | None:
+    async def update_server_health(self,server_id: int, server_health: ServerHealth) -> ServerHealth | None:
         raise NotImplementedError()
     
     @abstractmethod

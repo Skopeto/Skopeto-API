@@ -39,6 +39,7 @@ class SqlQuery:
 
     async def persist(self) -> None:
         await self.session.execute(text(self.query), self.params) if self.params else await self.session.execute(text(self.query))
+        await self.session.commit()
 
     @overload
     async def fetch_one(self, transformer: None = None) -> dict[str, Any] | None: ...

@@ -59,7 +59,7 @@ async def collect_server_health_use_case(
     existing = await server_repository.get_server_health(server_id)
     
     if existing:
-        await server_repository.update_server_health(server_health)
+        await server_repository.update_server_health(server_id, server_health)
     else:
         await server_repository.persist_server_health(server_health)
     

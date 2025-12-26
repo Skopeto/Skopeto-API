@@ -13,6 +13,7 @@ from app.modules.server_registry.infrastructure.sql_query.server_query import (
     create_server_query,
     create_server_health_query,
     get_all_servers_query,
+    get_server_health_query,
     get_server_query,
     update_server_health_query
 )
@@ -25,9 +26,8 @@ def server_from_db(row: dict[str, Any] | None) -> Server | None:
     
     server_attrs = {
         'id': row['id'],
-        'registrator_id': row['registrator_id'],
         'user_name': row['user_name'],
-        'password': row['password'],
+        'ssh_password_encrypted': row['ssh_password_encrypted'],
         'ip_address': row['ip_address'],
         'port': row['port'],
         'status': row['status'],
@@ -82,7 +82,7 @@ class SqlServerRepository(ServerRepositoryInterface, SqlBaseRepository):
         
     async def get_server_health(self, server_id: int) -> ServerHealth |None:
         try:
-            query, params = get_server_query(server_id)
+            query, params = get_server_health_query(server_id)
             sql_query = SqlQuery(self.session, query, params)
             server_helath = await sql_query.fetch_one(transformer=server_health_from_db)
             return server_helath
@@ -90,11 +90,11 @@ class SqlServerRepository(ServerRepositoryInterface, SqlBaseRepository):
             logger.error(f"Database error while fetching server health {server_id}: {str(e)}", exc_info=True)
             raise RepositoryException("Failed to retrieve server health")
         
-    async def update_server_health(self, server_health: ServerHealth) -> ServerHealth:
+    async def update_server_health(self, server_id, server_health: ServerHealth) -> ServerHealth:
         try:
-            query, params = update_server_health_query(server_health)
+            query, params = update_server_health_query(server_id, server_health)
             sql_query = SqlQuery(self.session, query, params)
-            await sql_query.fetch_one()
+            await sql_query.persist()
             return server_health
         except Exception as e:
             logger.error(f"Database error while updating server health {server_health.server_id}: {str(e)}", exc_info=True)

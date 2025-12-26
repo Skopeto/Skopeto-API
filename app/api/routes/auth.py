@@ -9,11 +9,11 @@ from app.core.security import get_user_repository
 router = APIRouter()
 
 @router.post("/auth/register")
-def register(
+async def register(
     request: RegisterUserRequest,
     user_repository: UserRepositoryInterface = Depends(get_user_repository)
 ):
-    user = register_user_use_case(request, user_repository)
+    user = await register_user_use_case(request, user_repository)
     return {"status": "success", "data": user}
 
 @router.post("/auth/login")
@@ -21,8 +21,5 @@ async def login(
     request: LoginRequest,
     user_repository: UserRepositoryInterface = Depends(get_user_repository)
 ):
-    token = user_login_use_case(
-        request,
-        user_repository
-    )
+    token = await user_login_use_case(request, user_repository)
     return {"status": "success", "data": token}

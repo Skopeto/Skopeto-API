@@ -27,7 +27,7 @@ async def collect_docker_container_data_use_case(
     for data in docker_container_data:
         container = DockerContainer(**data)
 
-        existing = await docker_repository.get_docker_container(container.container_id, server_id)
+        existing = await docker_repository.get_docker_container(container.name, server_id)
 
         if existing and existing.status != container.status:
             container.state_changed_at = datetime.now(timezone.utc)

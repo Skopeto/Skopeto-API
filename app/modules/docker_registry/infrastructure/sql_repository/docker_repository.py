@@ -31,7 +31,7 @@ def container_from_db(row: dict[str, Any] | None) -> DockerContainer | None:
 
 class SqlDockerRepository(DockerRepositoryInterface, SqlBaseRepository):
 
-    async def get_docker_container(self,name: str, server_id: int) -> DockerContainer | None:
+    async def get_docker_container(self, name: str, server_id: int) -> DockerContainer | None:
         try:
             query, params = get_docker_container_query(name, server_id)
             sql_query = SqlQuery(self.session, query, params)

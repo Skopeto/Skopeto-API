@@ -89,7 +89,7 @@ CREATE TABLE docker_containers (
     CONSTRAINT fk_docker_containers_server FOREIGN KEY (server_id)
         REFERENCES servers(id) ON DELETE CASCADE,
     CONSTRAINT chk_docker_containers_status CHECK (status IN ('running', 'stopped', 'paused', 'restarting', 'exited', 'created', 'dead')),
-    CONSTRAINT uq_docker_containers UNIQUE (server_id, container_id)
+    CONSTRAINT uq_docker_containers UNIQUE (server_id, name)
 );
 
 -- ============================================

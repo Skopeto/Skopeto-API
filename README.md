@@ -1,56 +1,38 @@
-# Server Monitoring Tool
+# Skopeto
 
-Open-source server and container monitoring with SSH and HTTP health checks.
+## Server Monitoring Tool
 
-![GitHub stars](https://img.shields.io/github/stars/you/monitoring-tool)
+Open-source server and container monitoring with SSH health checks.
+
+![GitHub stars](https://img.shields.io/github/stars/Skopeto/Skopeto-API)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 
 ## Features
 
 - 🖥️ SSH-based server monitoring (CPU, RAM, Disk)
-- 🐳 Container health checks (HTTP/HTTPS)
+- 🐳 Container health checks (ssh shell commands "docker ps -a")
 - 📊 Real-time dashboards
-- 🔔 Alert notifications
+- 🔔 Alert notifications - coming soon
 - 🔐 Multi-user authentication (JWT)
-- 🗄️ Supports PostgreSQL, MySQL, Oracle
+- 🗄️ Supports PostgreSQL, MySQL, Oracle / i will provide schema dumps for them however repository implementations and dbConn are up to you.
 
 ## Quick Start (Self-Hosted)
 ```bash
-git clone https://github.com/you/monitoring-tool
-cd monitoring-tool
+git clone https://github.com/Skopeto/Skopeto-API.git
+cd Skopeto-API
 cp .env.example .env
 docker compose up -d
 ```
-
+Dont forget to assign vlaues to .env
 Visit `http://localhost:8000`
 
 ## Documentation
-
-- [Installation Guide](docs/installation.md)
-- [Configuration](docs/configuration.md)
 - [API Documentation](docs/api.md)
 
 ## Managed Hosting ☁️
 
 Don't want to manage infrastructure?
-
-**Try our managed cloud version:**
-- ✅ Automatic updates
-- ✅ Backups included
-- ✅ Priority support
-
-**Pricing:**
-- $40/month
-- Enterprise: Custom pricing
-
-## Self-Hosting vs Managed
-
-| Feature | Self-Hosted (Free) | Managed Cloud |
-|---------|-------------------|---------------|
-| Price   | Free              | $29-99/month  |
-| Updates | Manual            | Automatic |
-| Backups | You manage        | Included |
-| Support | Community         | Priority |
+contact me
 
 ## Contributing
 
@@ -60,10 +42,9 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 AGPL-3.0 - see [LICENSE](LICENSE)
 
-**Commercial licensing available** - contact sales@yourapp.com
+**Commercial licensing available** - contact johnlesis91@gmail.com
 
 ## Author
-
 Built by [Fatjon Lleshi] (https://www.linkedin.com/in/giannis-l-117b08196/)
 
 ⭐ Star us on GitHub if you find this useful!

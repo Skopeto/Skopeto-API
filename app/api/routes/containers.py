@@ -23,9 +23,9 @@ async def get_container_data(
     ssh_client: DockerMetricService = Depends(get_docker_metrics_service)
 ):
     containers = await collect_docker_container_data_use_case(
-        request.server_id, 
-        ssh_client, 
-        server_repository, 
+        request.server_id,
+        ssh_client,
+        server_repository,
         docker_repository
     )
-    return containers
+    return {"status": "success", "data": containers}

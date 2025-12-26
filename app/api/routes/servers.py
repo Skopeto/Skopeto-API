@@ -16,35 +16,35 @@ from app.modules.server_registry.infrastructure.dependencies.dependencies import
 
 router = APIRouter(prefix="/servers", tags=["Servers"])
 
-@router.post("/register")
-async def register_server( 
+@router.post("/register", status_code=201)
+async def register_server(
     request: RegisterServerLocationRequest,
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
     current_user: User = Depends(get_current_user)
 ):
     if request.registrator_id != current_user.id:
         raise SecurityException("Cannot register server for another user")
-    
-    server = await register_server_use_case(request, server_repository)  
+
+    server = await register_server_use_case(request, server_repository)
     return {"status": "success", "data": server}
 
 @router.get("/server-health/{server_id}")
-async def get_server_health( 
+async def get_server_health(
     server_id: int,
     current_user: User = Depends(get_current_user),
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
     server_metrics: ServerMetricsService = Depends(get_server_metrics_service)
 ):
     server_health = await collect_server_health_use_case(server_id, server_repository, server_metrics)
-    return server_health
+    return {"status": "success", "data": server_health}
 
 @router.get("/all-servers")
-async def get_servers( 
+async def get_servers(
     current_user: User = Depends(get_current_user),
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
 ):
-    server_health = await get_servers_use_case(server_repository)
-    return server_health
+    servers = await get_servers_use_case(server_repository)
+    return {"status": "success", "data": servers}
 
 @router.post("/monitoring/collect-all")
 async def collect_all_monitoring(

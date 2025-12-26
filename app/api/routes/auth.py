@@ -8,7 +8,7 @@ from app.core.security import get_user_repository
 
 router = APIRouter()
 
-@router.post("/auth/register")
+@router.post("/auth/register", status_code=201)
 async def register(
     request: RegisterUserRequest,
     user_repository: UserRepositoryInterface = Depends(get_user_repository)

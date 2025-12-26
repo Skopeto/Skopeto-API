@@ -15,8 +15,9 @@ Thank you for your interest in contributing! We welcome contributions from the c
 
 ### Prerequisites
 
-- Python 3.11+
-- PostgreSQL 14+ (or Oracle/MySQL)
+- Python 3.12+
+- PostgreSQL 14+ (or Oracle/MySQL) database of you choosing if you configure it. 
+- Repository implementation is pretty basic sql little conflicts will arise from oracle specific or postgress SQL
 - Docker & Docker Compose
 - Git
 
@@ -24,8 +25,8 @@ Thank you for your interest in contributing! We welcome contributions from the c
 
 1. **Fork and clone the repository**
 ```bash
-git clone https://github.com/your-username/monitoring-tool.git
-cd monitoring-tool
+git clone https://github.com/Skopeto/Skopeto-API.git
+cd Skopeto-API
 ```
 
 2. **Create a virtual environment**
@@ -49,13 +50,12 @@ cp .env.example .env
 
 5. **Run the database**
 ```bash
-docker compose up -d db
+docker compose up -d
 ```
 
-6. **Run migrations**
-```bash
-alembic upgrade head
-```
+6. **migrations**
+- Run schema.sql dump inside docker container
+- Note this is for development and fast setup only - safer persistance is required for production
 
 7. **Start the development server**
 ```bash
@@ -108,7 +108,6 @@ git commit -m "feat: add container health check feature"
 
 [optional footer]
 ```
-
 **Types:**
 - `feat`: New feature
 - `fix`: Bug fix
@@ -234,12 +233,10 @@ app/
 Place tests in `tests/` directory mirroring the app structure:
 ```
 tests/
-├── unit/
-│   ├── test_password_service.py
-│   └── test_register_user_usecase.py
-└── integration/
-    └── test_server_monitoring.py
-```
+├── the_registry/
+│   ├── unit_tests
+│   │   └──test_collect_docker_container.py
+│   └── cofntest.py
 
 **Example unit test:**
 ```python
@@ -266,8 +263,6 @@ async def test_register_user_success(mock_user_repository):
 pytest
 
 pytest tests/unit
-
-pytest tests/integration
 
 pytest --cov=app --cov-report=html
 ```
@@ -331,7 +326,7 @@ If applicable
 
 **Environment:**
 - OS: [e.g. Ubuntu 22.04]
-- Python version: [e.g. 3.11]
+- Python version: [e.g. 3.12]
 - Database: [e.g. PostgreSQL 16]
 
 **Additional context**

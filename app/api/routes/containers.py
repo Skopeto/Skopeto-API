@@ -6,7 +6,6 @@ from app.modules.docker_registry.application.service.docker_metrics_service impo
 from app.modules.docker_registry.application.use_case.collect_docker_container import collect_docker_container_data_use_case
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
 from app.modules.docker_registry.infrastructure.dependencies.dependencies import get_docker_metrics_service, get_docker_repository
-from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
 from app.modules.server_registry.infrastructure.dependencies.dependencies import get_server_repository
 

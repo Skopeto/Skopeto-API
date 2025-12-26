@@ -26,10 +26,21 @@ async def collect_server_health_use_case(
     
     try:
         metrics = await server_metrics_service.get_server_metrics(server)
-        
+
+        metrics_status = metrics.get('status', 'up')
+        if metrics_status == 'timeout':
+            health_status = HealthStatus.OFFLINE
+            history_status = HealthStatushistory.OFFLINE
+        elif metrics_status in ('down', 'error'):
+            health_status = HealthStatus.ERROR
+            history_status = HealthStatushistory.ERROR
+        else:
+            health_status = HealthStatus.HEALTHY
+            history_status = HealthStatushistory.HEALTHY
+
         server_health = ServerHealth(
             server_id=server_id,
-            status=HealthStatus.HEALTHY,
+            status=health_status,
             cpu_usage=metrics.get('cpu_usage'),
             memory_usage=metrics.get('memory_usage'),
             disk_usage=metrics.get('disk_usage'),
@@ -38,7 +49,7 @@ async def collect_server_health_use_case(
         )
         server_history = ServerHistory(
             server_id=server_id,
-            status=HealthStatushistory.HEALTHY,
+            status=history_status,
             cpu_usage=metrics.get('cpu_usage'),
             memory_usage=metrics.get('memory_usage'),
             disk_usage=metrics.get('disk_usage'),

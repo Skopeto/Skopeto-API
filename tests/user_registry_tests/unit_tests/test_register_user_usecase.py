@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import Mock
-
 from app.modules.auth.application.request.register_user_request import RegisterUserRequest, UserType
 from app.modules.auth.application.use_case.register_user_use_case import register_user_use_case
 from app.modules.auth.domain.entity.user import Roles, User
@@ -40,18 +39,19 @@ def valid_register_user_request() -> RegisterUserRequest:
 
 # -------------------- Test Case --------------------
 
-def test_register_user_success(
-    valid_register_user_request: RegisterUserRequest, 
+@pytest.mark.asyncio
+async def test_register_user_success(
+    valid_register_user_request: RegisterUserRequest,
     mock_user_repository: Mock,
     mock_user: User
 ):
     def persist_side_effect(user: User) -> User:
         user.id = mock_user.id
         return user
+
+    mock_user_repository.persist_user.side_effect = persist_side_effect
     
-    mock_user_repository.persist.side_effect = persist_side_effect
-    
-    registered_user: User = register_user_use_case(
+    registered_user: User = await register_user_use_case(
         request=valid_register_user_request,
         user_repository=mock_user_repository
     )
@@ -66,4 +66,4 @@ def test_register_user_success(
     assert registered_user.id == mock_user.id
     assert registered_user.hashed_password != valid_register_user_request.password
     
-    mock_user_repository.persist.assert_called_once()
+    mock_user_repository.persist_user.assert_called_once()

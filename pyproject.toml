@@ -38,3 +38,8 @@ reportUnknownParameterType = false
 reportUnknownVariableType = false
 reportUnknownMemberType = false
 reportMissingTypeStubs = false
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

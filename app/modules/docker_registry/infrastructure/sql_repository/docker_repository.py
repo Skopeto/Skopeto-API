@@ -1,4 +1,3 @@
-import datetime
 from typing import Any
 import logging
 from app.core.Exception import RepositoryException
@@ -6,7 +5,7 @@ from app.core.base_repository import SqlBaseRepository
 from app.core.sql_query import SqlQuery
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
-from app.modules.docker_registry.infrastructure.sql_query.docker_query import create_docker_container_query, get_docker_container_query, update_docker_container_query
+from app.modules.docker_registry.infrastructure.sql_query.docker_query import create_docker_container_query, get_docker_container_query, get_docker_containers_query, update_docker_container_query
 logger = logging.getLogger(__name__)
 
 def container_from_db(row: dict[str, Any] | None) -> DockerContainer | None:
@@ -61,3 +60,13 @@ class SqlDockerRepository(DockerRepositoryInterface, SqlBaseRepository):
         except Exception as e:
             logger.error(f"Database error while saving container: {str(e)}", exc_info=True)
             raise RepositoryException("Failed to save container")
+        
+    async def get_docker_containers(self, server_id: int) -> list[DockerContainer]:
+        try:
+            query, params = get_docker_containers_query(server_id)
+            sql_query = SqlQuery(self.session, query, params)
+            rows = await sql_query.fetch_all(transformer=container_from_db)
+            return list(filter(None, rows))
+        except Exception as e:
+            logger.error(f"Database error while fetching containers: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to fetch containers")

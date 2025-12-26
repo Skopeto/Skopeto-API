@@ -11,5 +11,9 @@ class DockerRepositoryInterface(ABC):
         raise NotImplementedError()
     
     @abstractmethod
-    async def get_docker_container(self,container_id:str, server_id: int) -> DockerContainer |None:
+    async def get_docker_container(self, container_id: str, server_id: int) -> DockerContainer | None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def get_docker_containers(self, server_id: int) -> list[DockerContainer]:
         raise NotImplementedError()

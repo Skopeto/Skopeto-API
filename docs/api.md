@@ -347,6 +347,84 @@ Trigger collection of metrics from all registered servers and their containers.
 
 ---
 
+### Get All Servers with Containers
+
+Retrieve all servers with their current health status and associated containers.
+
+**Endpoint:** `POST /servers/containers/all`
+
+**Authentication:** Required
+
+**Request Body:** None
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "server": {
+        "id": 1,
+        "user_name": "root",
+        "ssh_password_encrypted": "gAAAAABmN8x...",
+        "ip_address": "192.168.1.100",
+        "port": 22,
+        "status": "up"
+      },
+      "current_health": {
+        "id": 42,
+        "server_id": 1,
+        "status": "healthy",
+        "cpu_usage": 45.2,
+        "memory_usage": 62.8,
+        "disk_usage": 78.5,
+        "uptime": "15 days, 3:24:10",
+        "checked_at": "2025-12-26T15:30:00Z"
+      },
+      "containers": [
+        {
+          "id": 1,
+          "server_id": 1,
+          "container_id": "a1b2c3d4e5f6",
+          "name": "servermonitor_api",
+          "image": "python:3.12-slim",
+          "status": "running",
+          "ports": "0.0.0.0:8000->8000/tcp",
+          "exit_code": null,
+          "state_changed_at": "2025-12-26T10:00:00Z",
+          "is_healthy": true,
+          "last_seen_at": "2025-12-26T15:30:00Z",
+          "created_at": "2025-12-25T08:00:00Z",
+          "updated_at": "2025-12-26T15:30:00Z"
+        }
+      ]
+    },
+    {
+      "server": {
+        "id": 2,
+        "user_name": "admin",
+        "ssh_password_encrypted": "gAAAAABmN9y...",
+        "ip_address": "192.168.1.101",
+        "port": 22,
+        "status": "down"
+      },
+      "current_health": null,
+      "containers": []
+    }
+  ]
+}
+```
+
+**Notes:**
+- Returns all servers with their most recent health status from the database
+- `current_health` can be `null` if no health check has been performed yet
+- `containers` array will be empty if no containers exist on the server
+- This endpoint does NOT trigger new health checks - it returns stored data
+- Use `POST /servers/monitoring/collect-all` to trigger fresh metrics collection
+
+---
+
 ## Container Endpoints
 
 ### Get Container Data

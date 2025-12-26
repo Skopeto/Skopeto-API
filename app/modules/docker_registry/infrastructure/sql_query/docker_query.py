@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 
-def get_docker_container_query(container_id: str, server_id: int):
+def get_docker_container_query(container_id: str, server_id: int) -> tuple[str, dict[str, Any]]:
     query = """
         SELECT * FROM docker_containers 
         WHERE server_id = :server_id 
@@ -71,4 +71,9 @@ def update_docker_container_query(container: DockerContainer) -> tuple[str, dict
         'state_changed_at': container.state_changed_at.replace(tzinfo=None) if container.state_changed_at else None,
         'is_healthy': container.is_healthy
     }
+    return query, params
+
+def get_docker_containers_query(server_id: int) -> tuple[str, dict[str, Any]]:
+    query = "SELECT * FROM docker_containers WHERE server_id = :server_id"
+    params = {"server_id": server_id}
     return query, params

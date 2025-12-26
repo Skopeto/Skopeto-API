@@ -7,6 +7,7 @@ from app.modules.server_registry.application.request.register_server_location_re
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
 from app.modules.server_registry.application.use_case.collect_all_monitoring import collect_all_servers_monitoring_use_case
 from app.modules.server_registry.application.use_case.get_servers import get_servers_use_case
+from app.modules.server_registry.application.use_case.get_servers_health_and_containers import get_all_servers_containers_use_case
 from app.modules.server_registry.application.use_case.register_server import register_server_use_case
 from app.modules.server_registry.application.use_case.collect_server_health import collect_server_health_use_case
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
@@ -48,6 +49,7 @@ async def get_servers(
 
 @router.post("/monitoring/collect-all")
 async def collect_all_monitoring(
+    current_user: User = Depends(get_current_user),
     server_repo: ServerRepositoryInterface = Depends(get_server_repository),
     docker_repo: DockerRepositoryInterface = Depends(get_docker_repository),
     server_metrics: ServerMetricsService = Depends(get_server_metrics_service),
@@ -61,4 +63,15 @@ async def collect_all_monitoring(
     )
     return {"status": "success", "data": results}
 
+@router.post("/servers/containers/all")
+async def get_all_servers_containers(
+    current_user: User = Depends(get_current_user),
+    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
+    docker_repo: DockerRepositoryInterface = Depends(get_docker_repository),
 
+):
+    results = await get_all_servers_containers_use_case(
+        server_repo,
+        docker_repo,
+    )
+    return {"status": "success", "data": results}

@@ -32,7 +32,10 @@ async def test_collect_docker_container_success_all_new(
         'status': ContainerStatus.RUNNING,
         'image': 'postgres:14',
         'ports': '5432:5432',
-        'server_id': 1
+        'server_id': 1,
+        'exit_code': None,
+        'is_healthy': None,
+        'state_changed_at': None
     }
 
     mock_server_repository.get_server.return_value = server
@@ -131,7 +134,10 @@ async def test_collect_docker_container_success_mixed(
         'status': ContainerStatus.RUNNING,
         'image': 'postgres:14',
         'ports': '5432:5432',
-        'server_id': 1
+        'server_id': 1,
+        'exit_code': None,
+        'is_healthy': None,
+        'state_changed_at': None
     }
 
     mock_server_repository.get_server.return_value = server

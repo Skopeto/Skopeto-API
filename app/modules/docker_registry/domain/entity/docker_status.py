@@ -7,3 +7,4 @@ class ContainerStatus(str, Enum):
     RESTARTING = "restarting"
     EXITED = "exited"
     CREATED = "created"
+    DEAD = "dead"

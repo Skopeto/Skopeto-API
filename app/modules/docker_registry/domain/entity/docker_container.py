@@ -10,6 +10,9 @@ class DockerContainer(BaseModel):
     image: str
     status: ContainerStatus
     ports: str
+    exit_code: int | None = None
+    state_changed_at: datetime | None = None
+    is_healthy: bool | None = None
     last_seen_at: datetime | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None

@@ -95,20 +95,25 @@ async def collect_all_servers_monitoring_use_case(
         if server_health.status == HealthStatus.HEALTHY:
             try:
                 docker_data = await docker_metrics_service.get_docker_metrics(server)
-                
+
                 for container_data in docker_data:
                     container = DockerContainer(**container_data)
-                    
+
                     existing_container = await docker_repository.get_docker_container(
                         container.container_id,
                         server.id
                     )
-                    
+
+                    if existing_container and existing_container.status != container.status:
+                        container.state_changed_at = datetime.now(timezone.utc)
+                    elif not existing_container:
+                        container.state_changed_at = datetime.now(timezone.utc)
+
                     if existing_container:
                         persisted = await docker_repository.update_docker_container(container)
                     else:
                         persisted = await docker_repository.persist_docker_container(container)
-                    
+
                     containers.append(persisted)
             except Exception as e:
                 logger.error(f"Failed to collect containers for {server.ip_address}: {e}", exc_info=True)

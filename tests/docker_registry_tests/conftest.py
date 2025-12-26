@@ -51,5 +51,8 @@ def sample_docker_container_data() -> dict:
         'status': ContainerStatus.RUNNING,
         'image': 'nginx:latest',
         'ports': '80:80',
-        'server_id': 1
+        'server_id': 1,
+        'exit_code': None,
+        'is_healthy': None,
+        'state_changed_at': None
     }

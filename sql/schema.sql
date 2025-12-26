@@ -80,12 +80,15 @@ CREATE TABLE docker_containers (
     image VARCHAR(500) NOT NULL,
     status VARCHAR(20) NOT NULL,
     ports VARCHAR(500),
+    exit_code INTEGER DEFAULT NULL,
+    state_changed_at TIMESTAMP DEFAULT NULL,
+    is_healthy BOOLEAN DEFAULT NULL,
     last_seen_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT fk_docker_containers_server FOREIGN KEY (server_id)
         REFERENCES servers(id) ON DELETE CASCADE,
-    CONSTRAINT chk_docker_containers_status CHECK (status IN ('running', 'stopped', 'paused', 'restarting', 'exited', 'created')),
+    CONSTRAINT chk_docker_containers_status CHECK (status IN ('running', 'stopped', 'paused', 'restarting', 'exited', 'created', 'dead')),
     CONSTRAINT uq_docker_containers UNIQUE (server_id, container_id)
 );
 
@@ -115,6 +118,8 @@ CREATE INDEX idx_server_history_status ON server_history(status);
 CREATE INDEX idx_docker_containers_server_id ON docker_containers(server_id);
 CREATE INDEX idx_docker_containers_status ON docker_containers(status);
 CREATE INDEX idx_docker_containers_container_id ON docker_containers(container_id);
+CREATE INDEX idx_docker_containers_last_seen ON docker_containers(last_seen_at);
+CREATE INDEX idx_docker_containers_state_changed ON docker_containers(state_changed_at);
 
 -- ============================================
 -- FUNCTIONS FOR UPDATED_AT TRIGGER

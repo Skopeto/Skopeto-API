@@ -107,7 +107,7 @@ async def edit_server(
 ):
     result = await edit_server_use_case(
         server_id,
-        request, 
+        request,
         server_repo
     )
     return {"status": "success", "data": result}

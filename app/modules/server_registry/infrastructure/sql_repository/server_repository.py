@@ -25,14 +25,16 @@ logger = logging.getLogger(__name__)
 def server_from_db(row: dict[str, Any] | None) -> Server | None:
     if not row:
         return None
-    
+
+    from app.modules.server_registry.domain.entity.server_status import ServerStatus
+
     server_attrs = {
         'id': row['id'],
         'user_name': row['user_name'],
         'ssh_password_encrypted': row['ssh_password_encrypted'],
         'ip_address': row['ip_address'],
         'port': row['port'],
-        'status': row['status'],
+        'status': ServerStatus(row['status']) if row['status'] else None,
     }
     return Server.model_construct(**server_attrs)
 

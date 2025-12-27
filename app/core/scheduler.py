@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler()
 
 async def scheduled_monitoring_task():
-    from app.modules.server_registry.application.use_case.collect_all_monitoring import collect_all_servers_monitoring_use_case
+    from app.modules.server_registry.application.use_case.collect_and_persist_all_monitoring import collect_and_persist_all_monitoring_use_case
     from app.core.db_session import get_session
     from app.modules.server_registry.infrastructure.sql_repository.server_repository import SqlServerRepository
     from app.modules.docker_registry.infrastructure.sql_repository.docker_repository import SqlDockerRepository
@@ -27,7 +27,7 @@ async def scheduled_monitoring_task():
         server_metrics = ServerMetricsService(get_ssh_client())
         docker_metrics = DockerMetricService(get_ssh_client())
         
-        results = await collect_all_servers_monitoring_use_case(
+        results = await collect_and_persist_all_monitoring_use_case(
             server_repo,
             docker_repo,
             server_metrics,
@@ -47,7 +47,7 @@ async def scheduled_monitoring_task():
 def start_scheduler():
     scheduler.add_job(
         scheduled_monitoring_task,
-        trigger=IntervalTrigger(minutes=60),
+        trigger=IntervalTrigger(minutes=30),
         id='monitoring_collection',
         name='Collect server and container monitoring data',
         replace_existing=True

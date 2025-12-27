@@ -18,7 +18,7 @@ class ServerMonitoringResult(BaseModel):
     current_health: ServerHealth
     containers: list[DockerContainer]
 
-async def collect_server_health_with_containers_use_case(
+async def collect_and_persist_single_monitoring_use_case(
     server_id: int,
     server_repository: ServerRepositoryInterface,
     docker_repository: DockerRepositoryInterface,

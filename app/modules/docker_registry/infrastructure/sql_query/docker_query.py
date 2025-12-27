@@ -39,7 +39,7 @@ def create_docker_container_query(container: DockerContainer) -> tuple[str, dict
         'status': container.status.value,
         'ports': container.ports,
         'exit_code': container.exit_code,
-        'state_changed_at': container.state_changed_at.replace(tzinfo=None) if container.state_changed_at else None,
+        'state_changed_at': container.state_changed_at,
         'is_healthy': container.is_healthy
     }
     return query, params
@@ -68,7 +68,7 @@ def update_docker_container_query(container: DockerContainer) -> tuple[str, dict
         'status': container.status.value,
         'ports': container.ports,
         'exit_code': container.exit_code,
-        'state_changed_at': container.state_changed_at.replace(tzinfo=None) if container.state_changed_at else None,
+        'state_changed_at': container.state_changed_at,
         'is_healthy': container.is_healthy
     }
     return query, params

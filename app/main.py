@@ -3,7 +3,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.api.routes import auth, containers, servers
+from app.api.routes import auth, servers
 from app.core.Exception import AppBaseException
 from app.core.scheduler import start_scheduler, stop_scheduler
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,7 +39,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.exception_handler(AppBaseException)
 async def app_exception_handler(request: Request, exc: AppBaseException):
     return JSONResponse(
@@ -49,7 +48,6 @@ async def app_exception_handler(request: Request, exc: AppBaseException):
 
 app.include_router(auth.router)
 app.include_router(servers.router)
-app.include_router(containers.router)
 
 @app.get("/")
 def root():

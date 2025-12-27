@@ -14,7 +14,7 @@ class ServersAndContainersResult(BaseModel):
     current_health: ServerHealth | None
     containers: list[DockerContainer]
 
-async def get_all_servers_containers_use_case(
+async def get_servers_with_containers_use_case(
     server_repository: ServerRepositoryInterface,
     docker_repository: DockerRepositoryInterface,
 ) -> list[ServersAndContainersResult]:

@@ -173,7 +173,6 @@ Register a new server for monitoring.
   "data": {
     "id": 5,
     "user_name": "root",
-    "ssh_password_encrypted": "gAAAAABmN8x...",
     "ip_address": "192.168.1.100",
     "port": 22,
     "status": "inactive"
@@ -181,7 +180,7 @@ Register a new server for monitoring.
 }
 ```
 
-**Note:** The response includes the encrypted SSH password (`ssh_password_encrypted` field using Fernet encryption).
+**Note:** For security, the `ssh_password_encrypted` field is **not included** in API responses.
 
 **Error Response (403 Forbidden):**
 
@@ -210,7 +209,6 @@ Retrieve all registered servers.
     {
       "id": 1,
       "user_name": "root",
-      "ssh_password_encrypted": "gAAAAABmN8x...",
       "ip_address": "192.168.1.100",
       "port": 22,
       "status": "up"
@@ -218,7 +216,6 @@ Retrieve all registered servers.
     {
       "id": 2,
       "user_name": "admin",
-      "ssh_password_encrypted": "gAAAAABmN9y...",
       "ip_address": "192.168.1.101",
       "port": 22,
       "status": "down"
@@ -227,20 +224,22 @@ Retrieve all registered servers.
 }
 ```
 
+**Note:** For security, the `ssh_password_encrypted` field is **not included** in API responses.
+
 ---
 
 ### Get Server Health
 
 Get real-time health metrics for a specific server.
 
-**Endpoint:** `GET /servers/server-health/{server_id}`
+**Endpoint:** `GET /servers/monitoring/{server_id}`
 
 **Authentication:** Required
 
 **Path Parameters:**
 - `server_id`: Integer ID of the server
 
-**Example:** `GET /servers/server-health/1`
+**Example:** `GET /servers/monitoring/1`
 
 **Response (200 OK):**
 
@@ -251,12 +250,11 @@ Get real-time health metrics for a specific server.
     "server": {
       "id": 1,
       "user_name": "root",
-      "ssh_password_encrypted": "gAAAAABmN8x...",
       "ip_address": "192.168.1.100",
       "port": 22,
       "status": "up"
     },
-    "health": {
+    "current_health": {
       "id": 42,
       "server_id": 1,
       "status": "healthy",
@@ -265,7 +263,24 @@ Get real-time health metrics for a specific server.
       "disk_usage": 78.5,
       "uptime": "15 days, 3:24:10",
       "checked_at": "2025-12-26T15:30:00Z"
-    }
+    },
+    "containers": [
+      {
+        "id": 1,
+        "server_id": 1,
+        "container_id": "a1b2c3d4e5f6",
+        "name": "servermonitor_api",
+        "image": "python:3.12-slim",
+        "status": "running",
+        "ports": "0.0.0.0:8000->8000/tcp",
+        "exit_code": null,
+        "state_changed_at": "2025-12-26T10:00:00Z",
+        "is_healthy": true,
+        "last_seen_at": "2025-12-26T15:30:00Z",
+        "created_at": "2025-12-25T08:00:00Z",
+        "updated_at": "2025-12-26T15:30:00Z"
+      }
+    ]
   }
 }
 ```
@@ -290,11 +305,9 @@ Get real-time health metrics for a specific server.
 
 Trigger collection of metrics from all registered servers and their containers.
 
-**Endpoint:** `POST /servers/monitoring/collect-all`
+**Endpoint:** `GET /servers/monitoring/collect-all`
 
 **Authentication:** Required (typically used by scheduled tasks)
-
-**Request Body:** None
 
 **Response (200 OK):**
 
@@ -306,7 +319,6 @@ Trigger collection of metrics from all registered servers and their containers.
       "server": {
         "id": 1,
         "user_name": "root",
-        "ssh_password_encrypted": "gAAAAABmN8x...",
         "ip_address": "192.168.1.100",
         "port": 22,
         "status": "up"
@@ -351,11 +363,9 @@ Trigger collection of metrics from all registered servers and their containers.
 
 Retrieve all servers with their current health status and associated containers.
 
-**Endpoint:** `POST /servers/containers/all`
+**Endpoint:** `GET /servers/containers/all`
 
 **Authentication:** Required
-
-**Request Body:** None
 
 **Response (200 OK):**
 
@@ -367,7 +377,6 @@ Retrieve all servers with their current health status and associated containers.
       "server": {
         "id": 1,
         "user_name": "root",
-        "ssh_password_encrypted": "gAAAAABmN8x...",
         "ip_address": "192.168.1.100",
         "port": 22,
         "status": "up"
@@ -404,7 +413,6 @@ Retrieve all servers with their current health status and associated containers.
       "server": {
         "id": 2,
         "user_name": "admin",
-        "ssh_password_encrypted": "gAAAAABmN9y...",
         "ip_address": "192.168.1.101",
         "port": 22,
         "status": "down"
@@ -424,7 +432,99 @@ Retrieve all servers with their current health status and associated containers.
 - **Important:** May include containers that have been deleted but not yet removed from the database
 - Containers are identified by `name` (not `container_id`) to handle container restarts correctly
 - When a container is stopped and restarted, Docker assigns a new container_id but keeps the same name
-- Use `POST /servers/monitoring/collect-all` to trigger fresh metrics collection and update the database
+- Use `GET /servers/monitoring/collect-all` to trigger fresh metrics collection and update the database
+
+---
+
+### Edit Server
+
+Update server information with partial updates.
+
+**Endpoint:** `PATCH /servers/edit/{server_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `server_id`: Integer ID of the server to edit
+
+**Request Body:**
+
+All fields are optional - only provide the fields you want to update:
+
+```json
+{
+  "name": "root",
+  "password": "newPassword123",
+  "ip_address": "192.168.1.150",
+  "port": 2222,
+  "status": "up"
+}
+```
+
+**Field Details:**
+- `name`: SSH username for the server (optional)
+- `password`: SSH password - will be encrypted (optional)
+- `ip_address`: IPv4 or IPv6 address (optional)
+- `port`: SSH port (optional)
+- `status`: One of: `"up"`, `"down"`, `"decommissioned"`, `"inactive"` (optional)
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 5,
+    "user_name": "root",
+    "ip_address": "192.168.1.150",
+    "port": 2222,
+    "status": "up"
+  }
+}
+```
+
+**Note:**
+- For security, the `ssh_password_encrypted` field is **not included** in API responses.
+- When providing a password, send the plaintext password - it will be encrypted before storage.
+
+**Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Server 5 not found"
+}
+```
+
+---
+
+### Delete Server
+
+Delete a registered server.
+
+**Endpoint:** `DELETE /servers/delete/{server_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `server_id`: Integer ID of the server to delete
+
+**Example:** `DELETE /servers/delete/5`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success"
+}
+```
+
+**Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Server not found"
+}
+```
 
 ---
 
@@ -591,7 +691,7 @@ curl -X POST http://localhost:8000/servers/register \
 **4. Get server health:**
 
 ```bash
-curl -X GET http://localhost:8000/servers/server-health/1 \
+curl -X GET http://localhost:8000/servers/monitoring/1 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
@@ -604,6 +704,39 @@ curl -X POST http://localhost:8000/containers/get-container-data \
   -d '{
     "server_id": 1
   }'
+```
+
+**6. Edit server:**
+
+```bash
+curl -X PATCH http://localhost:8000/servers/edit/1 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "port": 2222,
+    "status": "up"
+  }'
+```
+
+**7. Delete server:**
+
+```bash
+curl -X DELETE http://localhost:8000/servers/delete/1 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**8. Collect all monitoring data:**
+
+```bash
+curl -X GET http://localhost:8000/servers/monitoring/collect-all \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**9. Get all servers with containers:**
+
+```bash
+curl -X GET http://localhost:8000/servers/containers/all \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 ---

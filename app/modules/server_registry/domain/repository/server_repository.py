@@ -31,3 +31,11 @@ class ServerRepositoryInterface(ABC):
     @abstractmethod
     async def persist_server_health_history(self, server_health: ServerHistory) -> ServerHistory:
         raise NotImplementedError()
+    
+    @abstractmethod
+    async def delete_server(self, server_id) -> None:
+        raise NotImplementedError()
+    
+    @abstractmethod
+    async def update_server(self, Server: Server) -> Server:
+        raise NotImplementedError()

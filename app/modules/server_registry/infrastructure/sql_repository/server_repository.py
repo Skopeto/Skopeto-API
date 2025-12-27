@@ -12,10 +12,12 @@ from app.modules.server_registry.infrastructure.sql_query.server_query import (
     create_health_history_query,
     create_server_query,
     create_server_health_query,
+    delete_server_query,
     get_all_servers_query,
     get_server_health_query,
     get_server_query,
-    update_server_health_query
+    update_server_health_query,
+    update_server_query
 )
 
 logger = logging.getLogger(__name__)
@@ -125,3 +127,24 @@ class SqlServerRepository(ServerRepositoryInterface, SqlBaseRepository):
         except Exception as e:
             logger.error(f"Database error while fetching all servers: {str(e)}", exc_info=True)
             raise RepositoryException("Failed to retrieve servers")
+        
+    async def delete_server(self, server_id: int) -> None:
+        try:
+            query, params = delete_server_query(server_id)
+            await SqlQuery(self.session, query, params).delete()
+        except Exception as e:
+            logger.error(f"Database error while deleting server: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to delete server")
+    
+    async def update_server(self, server: Server) -> Server:
+        try:
+            if server.id is None:
+                raise RepositoryException("Server ID is required for update")
+
+            query, params = update_server_query(server)
+            await SqlQuery(self.session, query, params).persist()
+
+            return server
+        except Exception as e:
+            logger.error(f"Database error while updating server: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to update server")

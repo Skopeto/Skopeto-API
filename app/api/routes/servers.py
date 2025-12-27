@@ -4,8 +4,11 @@ from app.modules.docker_registry.application.service.docker_metrics_service impo
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
 from app.modules.docker_registry.infrastructure.dependencies.dependencies import get_docker_metrics_service, get_docker_repository
 from app.modules.server_registry.application.request.register_server_location_request import RegisterServerLocationRequest
+from app.modules.server_registry.application.request.update_server_request import UpdateServerRequest
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
 from app.modules.server_registry.application.use_case.collect_and_persist_all_monitoring import collect_and_persist_all_monitoring_use_case
+from app.modules.server_registry.application.use_case.delete_server import delete_server_use_case
+from app.modules.server_registry.application.use_case.edit_server import edit_server_use_case
 from app.modules.server_registry.application.use_case.get_servers import get_servers_use_case
 from app.modules.server_registry.application.use_case.get_servers_with_containers import get_servers_with_containers_use_case
 from app.modules.server_registry.application.use_case.register_server import register_server_use_case
@@ -82,3 +85,29 @@ async def get_all_servers_and_containers(
         docker_repo,
     )
     return {"status": "success", "data": results}
+
+@router.delete('/delete/{server_id}')
+async def delete_server(
+    server_id: int,
+    current_user: User = Depends(get_current_user),
+    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
+):
+    await delete_server_use_case(
+        server_id,
+        server_repo
+    )
+    return {"status": "success"}
+
+@router.patch('/edit/{server_id}')
+async def edit_server(
+    server_id: int,
+    request: UpdateServerRequest,
+    current_user: User = Depends(get_current_user),
+    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
+):
+    result = await edit_server_use_case(
+        server_id,
+        request, 
+        server_repo
+    )
+    return {"status": "success", "data": result}

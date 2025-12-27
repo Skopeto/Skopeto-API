@@ -67,3 +67,7 @@ class SqlQuery:
         if transformer:
             return [transformer(row._asdict()) for row in cursor]
         return [row._asdict() for row in cursor]
+    
+    async def delete(self) -> None:
+        await self.session.execute(text(self.query), self.params) if self.params else await self.session.execute(text(self.query))
+        await self.session.commit()

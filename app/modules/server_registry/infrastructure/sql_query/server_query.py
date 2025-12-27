@@ -124,3 +124,28 @@ def get_all_servers_query() -> tuple[str, dict[str, Any]]:
     params = {}
     return query, params
 
+def delete_server_query(server_id: int) -> tuple[str, dict]:
+    query = """DELETE FROM servers WHERE id = :server_id"""
+    params = {'server_id': server_id}
+    return query, params
+
+def update_server_query(server: Server) -> tuple[str, dict]:
+    query = """
+        UPDATE servers
+        SET
+            user_name = :user_name,
+            ssh_password_encrypted = :ssh_password_encrypted,
+            ip_address = :ip_address,
+            port = :port,
+            status = :status
+        WHERE id = :id
+    """
+    params = {
+        'id': server.id,
+        'user_name': server.user_name,
+        'ssh_password_encrypted': server.ssh_password_encrypted,
+        'ip_address': server.ip_address,
+        'port': server.port,
+        'status': server.status.value if server.status else None
+    }
+    return query, params

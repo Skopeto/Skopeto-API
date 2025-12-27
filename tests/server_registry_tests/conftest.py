@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 from datetime import datetime, timezone
 
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
+from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
 from app.modules.server_registry.domain.entity.server import Server, ServerStatus
 from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
 from app.modules.server_registry.domain.entity.server_history import ServerHistory, HealthStatushistory
@@ -17,6 +18,18 @@ def mock_server_repository() -> AsyncMock:
 @pytest.fixture
 def mock_server_metrics_service() -> AsyncMock:
     """Mock ServerMetricsService - using AsyncMock without spec to avoid import issues"""
+    return AsyncMock()
+
+
+@pytest.fixture
+def mock_docker_repository() -> AsyncMock:
+    """Mock DockerRepositoryInterface with AsyncMock for async methods"""
+    return AsyncMock(spec=DockerRepositoryInterface)
+
+
+@pytest.fixture
+def mock_docker_metrics_service() -> AsyncMock:
+    """Mock DockerMetricService - using AsyncMock without spec to avoid import issues"""
     return AsyncMock()
 
 

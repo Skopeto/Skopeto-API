@@ -12,7 +12,7 @@ from app.modules.docker_registry.domain.repository.docker_repository import Dock
 import logging
 logger = logging.getLogger(__name__)
 
-class ServerMonitoringResult(BaseModel):
+class ServersMonitoringResult(BaseModel):
     server: Server
     current_health: ServerHealth
     containers: list[DockerContainer]
@@ -22,7 +22,7 @@ async def collect_all_servers_monitoring_use_case(
     docker_repository: DockerRepositoryInterface,
     server_metrics_service: ServerMetricsService,
     docker_metrics_service: DockerMetricService
-) -> list[ServerMonitoringResult]:
+) -> list[ServersMonitoringResult]:
     
     servers = await server_repository.get_all_servers()
     
@@ -130,7 +130,7 @@ async def collect_all_servers_monitoring_use_case(
                 logger.error(f"Failed to collect containers for {server.ip_address}: {e}", exc_info=True)
                 pass
         
-        results.append(ServerMonitoringResult(
+        results.append(ServersMonitoringResult(
             server=server,
             current_health=server_health,
             containers=containers

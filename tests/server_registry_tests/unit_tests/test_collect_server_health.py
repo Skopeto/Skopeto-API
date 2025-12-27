@@ -3,9 +3,9 @@ from unittest.mock import AsyncMock, patch
 from datetime import datetime, timezone
 
 from app.core.Exception import ApplicationException, SSHConnectionException
-from app.modules.server_registry.application.use_case.collect_server_health import (
-    collect_server_health_use_case,
-    ServerWithHealth
+from app.modules.server_registry.application.use_case.collect_server_health_with_containers import (
+    collect_server_health_with_containers_use_case,
+    ServerMonitoringResult
 )
 from app.modules.server_registry.domain.entity.server import Server, ServerStatus
 from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
@@ -13,11 +13,13 @@ from app.modules.server_registry.domain.entity.server_history import HealthStatu
 
 
 @pytest.mark.asyncio
-@patch('app.modules.server_registry.application.use_case.collect_server_health.datetime')
+@patch('app.modules.server_registry.application.use_case.collect_server_health_with_containers.datetime')
 async def test_collect_server_health_success_healthy_new(
     mock_datetime,
     mock_server_repository: AsyncMock,
+    mock_docker_repository: AsyncMock,
     mock_server_metrics_service: AsyncMock,
+    mock_docker_metrics_service: AsyncMock,
     sample_server: Server,
     sample_server_metrics: dict
 ):
@@ -29,23 +31,27 @@ async def test_collect_server_health_success_healthy_new(
     mock_server_repository.get_server.return_value = sample_server
     mock_server_metrics_service.get_server_metrics.return_value = sample_server_metrics
     mock_server_repository.get_server_health.return_value = None  # No existing health
+    mock_docker_metrics_service.get_docker_metrics.return_value = []
 
     # Act
-    result = await collect_server_health_use_case(
+    result = await collect_server_health_with_containers_use_case(
         server_id=1,
         server_repository=mock_server_repository,
-        server_metrics_service=mock_server_metrics_service
+        docker_repository=mock_docker_repository,
+        server_metrics_service=mock_server_metrics_service,
+        docker_metrics_service=mock_docker_metrics_service
     )
 
     # Assert
-    assert isinstance(result, ServerWithHealth)
+    assert isinstance(result, ServerMonitoringResult)
     assert result.server.id == 1
-    assert result.health.status == HealthStatus.HEALTHY
-    assert result.health.cpu_usage == 25.5
-    assert result.health.memory_usage == 60.2
-    assert result.health.disk_usage == 45.0
-    assert result.health.uptime == 'up 5 days'
-    assert result.health.checked_at == fixed_time
+    assert result.current_health.status == HealthStatus.HEALTHY
+    assert result.current_health.cpu_usage == 25.5
+    assert result.current_health.memory_usage == 60.2
+    assert result.current_health.disk_usage == 45.0
+    assert result.current_health.uptime == 'up 5 days'
+    assert result.current_health.checked_at == fixed_time
+    assert result.containers == []
 
     mock_server_repository.get_server.assert_called_once_with(1)
     mock_server_metrics_service.get_server_metrics.assert_called_once_with(sample_server)
@@ -55,11 +61,13 @@ async def test_collect_server_health_success_healthy_new(
 
 
 @pytest.mark.asyncio
-@patch('app.modules.server_registry.application.use_case.collect_server_health.datetime')
+@patch('app.modules.server_registry.application.use_case.collect_server_health_with_containers.datetime')
 async def test_collect_server_health_success_healthy_update_existing(
     mock_datetime,
     mock_server_repository: AsyncMock,
+    mock_docker_repository: AsyncMock,
     mock_server_metrics_service: AsyncMock,
+    mock_docker_metrics_service: AsyncMock,
     sample_server: Server,
     sample_server_health: ServerHealth,
     sample_server_metrics: dict
@@ -72,28 +80,34 @@ async def test_collect_server_health_success_healthy_update_existing(
     mock_server_repository.get_server.return_value = sample_server
     mock_server_metrics_service.get_server_metrics.return_value = sample_server_metrics
     mock_server_repository.get_server_health.return_value = sample_server_health
+    mock_docker_metrics_service.get_docker_metrics.return_value = []
 
     # Act
-    result = await collect_server_health_use_case(
+    result = await collect_server_health_with_containers_use_case(
         server_id=1,
         server_repository=mock_server_repository,
-        server_metrics_service=mock_server_metrics_service
+        docker_repository=mock_docker_repository,
+        server_metrics_service=mock_server_metrics_service,
+        docker_metrics_service=mock_docker_metrics_service
     )
 
     # Assert
-    assert isinstance(result, ServerWithHealth)
-    assert result.health.status == HealthStatus.HEALTHY
+    assert isinstance(result, ServerMonitoringResult)
+    assert result.current_health.status == HealthStatus.HEALTHY
+    assert result.containers == []
     mock_server_repository.update_server_health.assert_called_once()
     mock_server_repository.persist_server_health.assert_not_called()
     mock_server_repository.persist_server_health_history.assert_called_once()
 
 
 @pytest.mark.asyncio
-@patch('app.modules.server_registry.application.use_case.collect_server_health.datetime')
+@patch('app.modules.server_registry.application.use_case.collect_server_health_with_containers.datetime')
 async def test_collect_server_health_ssh_connection_failure(
     mock_datetime,
     mock_server_repository: AsyncMock,
+    mock_docker_repository: AsyncMock,
     mock_server_metrics_service: AsyncMock,
+    mock_docker_metrics_service: AsyncMock,
     sample_server: Server
 ):
     """Test health collection when SSH connection fails"""
@@ -106,21 +120,24 @@ async def test_collect_server_health_ssh_connection_failure(
     mock_server_repository.get_server_health.return_value = None
 
     # Act
-    result = await collect_server_health_use_case(
+    result = await collect_server_health_with_containers_use_case(
         server_id=1,
         server_repository=mock_server_repository,
-        server_metrics_service=mock_server_metrics_service
+        docker_repository=mock_docker_repository,
+        server_metrics_service=mock_server_metrics_service,
+        docker_metrics_service=mock_docker_metrics_service
     )
 
     # Assert
-    assert isinstance(result, ServerWithHealth)
+    assert isinstance(result, ServerMonitoringResult)
     assert result.server.id == 1
-    assert result.health.status == HealthStatus.OFFLINE
-    assert result.health.cpu_usage is None
-    assert result.health.memory_usage is None
-    assert result.health.disk_usage is None
-    assert result.health.uptime is None
-    assert result.health.checked_at == fixed_time
+    assert result.current_health.status == HealthStatus.OFFLINE
+    assert result.current_health.cpu_usage is None
+    assert result.current_health.memory_usage is None
+    assert result.current_health.disk_usage is None
+    assert result.current_health.uptime is None
+    assert result.current_health.checked_at == fixed_time
+    assert result.containers == []
 
     mock_server_repository.persist_server_health.assert_called_once()
 
@@ -130,11 +147,13 @@ async def test_collect_server_health_ssh_connection_failure(
 
 
 @pytest.mark.asyncio
-@patch('app.modules.server_registry.application.use_case.collect_server_health.datetime')
+@patch('app.modules.server_registry.application.use_case.collect_server_health_with_containers.datetime')
 async def test_collect_server_health_general_exception(
     mock_datetime,
     mock_server_repository: AsyncMock,
+    mock_docker_repository: AsyncMock,
     mock_server_metrics_service: AsyncMock,
+    mock_docker_metrics_service: AsyncMock,
     sample_server: Server,
     caplog
 ):
@@ -148,19 +167,22 @@ async def test_collect_server_health_general_exception(
     mock_server_repository.get_server_health.return_value = None
 
     # Act
-    result = await collect_server_health_use_case(
+    result = await collect_server_health_with_containers_use_case(
         server_id=1,
         server_repository=mock_server_repository,
-        server_metrics_service=mock_server_metrics_service
+        docker_repository=mock_docker_repository,
+        server_metrics_service=mock_server_metrics_service,
+        docker_metrics_service=mock_docker_metrics_service
     )
 
     # Assert
-    assert isinstance(result, ServerWithHealth)
-    assert result.health.status == HealthStatus.ERROR
-    assert result.health.cpu_usage is None
-    assert result.health.memory_usage is None
-    assert result.health.disk_usage is None
-    assert result.health.uptime is None
+    assert isinstance(result, ServerMonitoringResult)
+    assert result.current_health.status == HealthStatus.ERROR
+    assert result.current_health.cpu_usage is None
+    assert result.current_health.memory_usage is None
+    assert result.current_health.disk_usage is None
+    assert result.current_health.uptime is None
+    assert result.containers == []
 
     # Verify error was logged
     assert "Failed to collect metrics" in caplog.text
@@ -175,7 +197,9 @@ async def test_collect_server_health_general_exception(
 @pytest.mark.asyncio
 async def test_collect_server_health_server_not_found(
     mock_server_repository: AsyncMock,
-    mock_server_metrics_service: AsyncMock
+    mock_docker_repository: AsyncMock,
+    mock_server_metrics_service: AsyncMock,
+    mock_docker_metrics_service: AsyncMock
 ):
     """Test when server is not found"""
     # Arrange
@@ -183,10 +207,12 @@ async def test_collect_server_health_server_not_found(
 
     # Act & Assert
     with pytest.raises(ApplicationException, match="Server 1 not found"):
-        await collect_server_health_use_case(
+        await collect_server_health_with_containers_use_case(
             server_id=1,
             server_repository=mock_server_repository,
-            server_metrics_service=mock_server_metrics_service
+            docker_repository=mock_docker_repository,
+            server_metrics_service=mock_server_metrics_service,
+            docker_metrics_service=mock_docker_metrics_service
         )
 
     mock_server_repository.get_server.assert_called_once_with(1)

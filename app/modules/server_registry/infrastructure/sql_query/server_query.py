@@ -64,7 +64,7 @@ def create_server_health_query(server_health: ServerHealth) -> tuple[str, dict[s
         'memory_usage': server_health.memory_usage,
         'disk_usage': server_health.disk_usage,
         'uptime': server_health.uptime,
-        'checked_at': server_health.checked_at
+        'checked_at': server_health.checked_at.replace(tzinfo=None) if server_health.checked_at else None
     }
     return query, params
 
@@ -87,7 +87,7 @@ def update_server_health_query(server_id: int, server_health: ServerHealth) -> t
         'memory_usage': server_health.memory_usage,
         'disk_usage': server_health.disk_usage,
         'uptime': server_health.uptime,
-        'checked_at': server_health.checked_at
+        'checked_at': server_health.checked_at.replace(tzinfo=None) if server_health.checked_at else None
     }
     return query, params
 
@@ -113,7 +113,7 @@ def create_health_history_query(server_history: ServerHistory) -> tuple[str, dic
         'memory_usage': server_history.memory_usage,
         'disk_usage': server_history.disk_usage,
         'uptime': server_history.uptime,
-        'checked_at': server_history.checked_at
+        'checked_at': server_history.checked_at.replace(tzinfo=None) if server_history.checked_at else None
     }
     return query, params
 

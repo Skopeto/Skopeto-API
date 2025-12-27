@@ -37,7 +37,12 @@ def server_from_db(row: dict[str, Any] | None) -> Server | None:
 def server_health_from_db(row: dict[str, Any] | None) -> ServerHealth |None:
     if not row:
         return None
-    
+
+    # Add UTC timezone to naive datetime from database
+    checked_at = row['checked_at']
+    if checked_at and checked_at.tzinfo is None:
+        checked_at = checked_at.replace(tzinfo=datetime.timezone.utc)
+
     server_health_attrs = {
         'id' : row['id'],
         'server_id' : row['server_id'],
@@ -46,7 +51,7 @@ def server_health_from_db(row: dict[str, Any] | None) -> ServerHealth |None:
         'memory_usage' : row['memory_usage'],
         'disk_usage' : row['disk_usage'],
         'uptime' : row['uptime'],
-        'checked_at' : row['checked_at'],
+        'checked_at' : checked_at,
     }
     return ServerHealth.model_construct(**server_health_attrs)
 

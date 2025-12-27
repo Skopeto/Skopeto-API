@@ -1,4 +1,5 @@
 from typing import Any
+import datetime
 import logging
 from app.core.Exception import RepositoryException
 from app.core.base_repository import SqlBaseRepository
@@ -11,7 +12,24 @@ logger = logging.getLogger(__name__)
 def container_from_db(row: dict[str, Any] | None) -> DockerContainer | None:
     if not row:
         return None
-    
+
+    # Add UTC timezone to naive datetime fields from database
+    state_changed_at = row.get('state_changed_at')
+    if state_changed_at and state_changed_at.tzinfo is None:
+        state_changed_at = state_changed_at.replace(tzinfo=datetime.timezone.utc)
+
+    last_seen_at = row['last_seen_at']
+    if last_seen_at and last_seen_at.tzinfo is None:
+        last_seen_at = last_seen_at.replace(tzinfo=datetime.timezone.utc)
+
+    created_at = row['created_at']
+    if created_at and created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=datetime.timezone.utc)
+
+    updated_at = row['updated_at']
+    if updated_at and updated_at.tzinfo is None:
+        updated_at = updated_at.replace(tzinfo=datetime.timezone.utc)
+
     container_attrs = {
         'id': row['id'],
         'server_id': row['server_id'],
@@ -21,11 +39,11 @@ def container_from_db(row: dict[str, Any] | None) -> DockerContainer | None:
         'status': row['status'],
         'ports': row['ports'],
         'exit_code': row.get('exit_code'),
-        'state_changed_at': row.get('state_changed_at'),
+        'state_changed_at': state_changed_at,
         'is_healthy': row.get('is_healthy'),
-        'last_seen_at': row['last_seen_at'],
-        'created_at': row['created_at'],
-        'updated_at': row['updated_at'],
+        'last_seen_at': last_seen_at,
+        'created_at': created_at,
+        'updated_at': updated_at,
     }
     return DockerContainer.model_construct(**container_attrs)
 

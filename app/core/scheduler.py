@@ -47,7 +47,7 @@ async def scheduled_monitoring_task():
 def start_scheduler():
     scheduler.add_job(
         scheduled_monitoring_task,
-        trigger=IntervalTrigger(minutes=30),
+        trigger=IntervalTrigger(minutes=1),
         id='monitoring_collection',
         name='Collect server and container monitoring data',
         replace_existing=True

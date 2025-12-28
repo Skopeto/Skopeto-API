@@ -6,6 +6,7 @@ from app.modules.docker_registry.domain.repository.docker_repository import Dock
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 from app.modules.docker_registry.domain.entity.docker_status import ContainerStatus
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
+from app.modules.server_registry.domain.entity.server import Server, ServerStatus
 
 
 @pytest.fixture
@@ -56,3 +57,16 @@ def sample_docker_container_data() -> dict:
         'is_healthy': None,
         'state_changed_at': None
     }
+
+
+@pytest.fixture
+def sample_server() -> Server:
+    """Sample Server entity for testing"""
+    return Server(
+        id=1,
+        user_name="testuser",
+        ssh_password_encrypted="encrypted_password",
+        ip_address="192.168.1.100",
+        port=22,
+        status=ServerStatus.UP
+    )

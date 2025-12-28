@@ -41,6 +41,7 @@ async def register_server(
 @router.post("/containers/collect/{server_id}")
 async def collect_server_monitoring(
     server_id: int,
+    current_user: User = Depends(get_current_user),
     server_repo: ServerRepositoryInterface = Depends(get_server_repository),
     docker_repo: DockerRepositoryInterface = Depends(get_docker_repository),
     server_metrics: ServerMetricsService = Depends(get_server_metrics_service),

@@ -228,18 +228,18 @@ Retrieve all registered servers.
 
 ---
 
-### Get Server Health
+### Collect Server Monitoring Data
 
-Get real-time health metrics for a specific server.
+Actively collect real-time health metrics and container data for a specific server.
 
-**Endpoint:** `GET /servers/monitoring/{server_id}`
+**Endpoint:** `POST /servers/containers/collect/{server_id}`
 
 **Authentication:** Required
 
 **Path Parameters:**
 - `server_id`: Integer ID of the server
 
-**Example:** `GET /servers/monitoring/1`
+**Example:** `POST /servers/containers/collect/1`
 
 **Response (200 OK):**
 
@@ -291,6 +291,12 @@ Get real-time health metrics for a specific server.
 - `"offline"`: Server is unreachable
 - `"error"`: Error occurred during health check
 
+**Notes:**
+- This endpoint actively collects fresh metrics from the server via SSH
+- Server health metrics are collected and persisted to the database
+- Container metrics are only collected if the server is healthy
+- Use `GET /servers/containers/all` to retrieve stored data without triggering new collection
+
 **Error Response (404 Not Found):**
 
 ```json
@@ -305,9 +311,9 @@ Get real-time health metrics for a specific server.
 
 Trigger collection of metrics from all registered servers and their containers.
 
-**Endpoint:** `GET /servers/monitoring/collect-all`
+**Endpoint:** `POST /servers/monitoring/collect-all`
 
-**Authentication:** Required (typically used by scheduled tasks)
+**Authentication:** Required
 
 **Response (200 OK):**
 
@@ -355,7 +361,11 @@ Trigger collection of metrics from all registered servers and their containers.
 }
 ```
 
-**Note:** Returns an array of server monitoring results, each containing the full server object, current health metrics, and associated containers.
+**Notes:**
+- This endpoint actively collects fresh metrics from all servers concurrently using asyncio.gather
+- Returns an array of server monitoring results, each containing the full server object, current health metrics, and associated containers
+- Failed servers are logged but excluded from results (only successful collections are returned)
+- Use this endpoint to update the database with the latest metrics
 
 ---
 
@@ -426,13 +436,13 @@ Retrieve all servers with their current health status and associated containers.
 
 **Notes:**
 - Returns all servers with their most recent health status from the database
-- `server_health` can be `null` if no health check has been performed yet also this is not current, its health returned from last scheduler deployment
+- `server_health` can be `null` if no health check has been performed yet
 - `containers` array will be empty if no containers exist on the server
-- This endpoint does NOT trigger new health checks - it returns stored data
+- This endpoint does NOT trigger new health checks - it returns stored data from the database
 - **Important:** May include containers that have been deleted but not yet removed from the database
 - Containers are identified by `name` (not `container_id`) to handle container restarts correctly
 - When a container is stopped and restarted, Docker assigns a new container_id but keeps the same name
-- Use `GET /servers/monitoring/collect-all` to trigger fresh metrics collection and update the database
+- Use `POST /servers/monitoring/collect-all` to trigger fresh metrics collection and update the database
 
 ---
 
@@ -688,10 +698,10 @@ curl -X POST http://localhost:8000/servers/register \
   }'
 ```
 
-**4. Get server health:**
+**4. Collect server monitoring data:**
 
 ```bash
-curl -X GET http://localhost:8000/servers/monitoring/1 \
+curl -X POST http://localhost:8000/servers/containers/collect/1 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
@@ -728,7 +738,7 @@ curl -X DELETE http://localhost:8000/servers/delete/1 \
 **8. Collect all monitoring data:**
 
 ```bash
-curl -X GET http://localhost:8000/servers/monitoring/collect-all \
+curl -X POST http://localhost:8000/servers/monitoring/collect-all \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 

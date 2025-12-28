@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends
+import logging
+import asyncio
 from app.core.Exception import ApplicationException, SecurityException
 from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
 from app.modules.docker_registry.application.use_case.collect_container_metrics import collect_container_metrics_use_case
@@ -8,17 +10,19 @@ from app.modules.docker_registry.infrastructure.dependencies.dependencies import
 from app.modules.server_registry.application.request.register_server_location_request import RegisterServerLocationRequest
 from app.modules.server_registry.application.request.update_server_request import UpdateServerRequest
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
-from app.modules.server_registry.application.use_case.collect_and_persist_all_monitoring import collect_and_persist_all_monitoring_use_case
 from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
 from app.modules.server_registry.application.use_case.delete_server import delete_server_use_case
 from app.modules.server_registry.application.use_case.edit_server import edit_server_use_case
 from app.modules.server_registry.application.use_case.get_servers import get_servers_use_case
 from app.modules.server_registry.application.use_case.get_server_health import get_server_health_use_case
 from app.modules.server_registry.application.use_case.register_server import register_server_use_case
+from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
 from app.modules.auth.domain.entity.user import User
 from app.core.security import get_current_user
 from app.modules.server_registry.infrastructure.dependencies.dependencies import get_server_metrics_service, get_server_repository
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/servers", tags=["Servers"])
 
@@ -77,7 +81,7 @@ async def get_servers(
     servers = await get_servers_use_case(server_repository)
     return {"status": "success", "data": servers}
 
-@router.get("/monitoring/collect-all")
+@router.post("/monitoring/collect-all")
 async def collect_all_monitoring(
     current_user: User = Depends(get_current_user),
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
@@ -85,13 +89,47 @@ async def collect_all_monitoring(
     server_metrics: ServerMetricsService = Depends(get_server_metrics_service),
     docker_metrics: DockerMetricService = Depends(get_docker_metrics_service)
 ):
-    results = await collect_and_persist_all_monitoring_use_case(
-        server_repository,
-        docker_repository,
-        server_metrics,
-        docker_metrics
+    servers = await server_repository.get_all_servers()
+    
+    if not servers:
+        raise ApplicationException("No servers found")
+    
+    async def collect_single_server(server: Server):
+        if server.id is None:
+            return None
+        
+        try:
+            server_health = await collect_server_metrics_use_case(
+                server.id,
+                server_repository,
+                server_metrics
+            )
+            
+            containers = await collect_container_metrics_use_case(
+                server.id,
+                server,
+                server_health,
+                docker_repository,
+                docker_metrics
+            )
+            
+            return {
+                "server": server,
+                "current_health": server_health,
+                "containers": containers
+            }
+        except Exception as e:
+            logger.error(f"Failed to collect server {server.id}: {e}")
+            return None
+    
+    results = await asyncio.gather(
+        *[collect_single_server(server) for server in servers],
+        return_exceptions=False
     )
-    return {"status": "success", "data": results}
+    
+    valid_results = [result for result in results if result is not None]
+    
+    return {"status": "success", "data": valid_results}
 
 @router.get("/containers/all")
 async def get_all_servers_and_containers(

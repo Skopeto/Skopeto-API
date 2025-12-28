@@ -381,7 +381,7 @@ Retrieve all servers with their current health status and associated containers.
         "port": 22,
         "status": "up"
       },
-      "current_health": {
+      "server_health": {
         "id": 42,
         "server_id": 1,
         "status": "healthy",
@@ -426,7 +426,7 @@ Retrieve all servers with their current health status and associated containers.
 
 **Notes:**
 - Returns all servers with their most recent health status from the database
-- `current_health` can be `null` if no health check has been performed yet
+- `server_health` can be `null` if no health check has been performed yet also this is not current, its health returned from last scheduler deployment
 - `containers` array will be empty if no containers exist on the server
 - This endpoint does NOT trigger new health checks - it returns stored data
 - **Important:** May include containers that have been deleted but not yet removed from the database

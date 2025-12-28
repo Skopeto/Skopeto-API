@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from app.core.Exception import SecurityException
 from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
+from app.modules.docker_registry.application.use_case.get_containers import get_containers_use_case
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
 from app.modules.docker_registry.infrastructure.dependencies.dependencies import get_docker_metrics_service, get_docker_repository
 from app.modules.server_registry.application.request.register_server_location_request import RegisterServerLocationRequest
@@ -10,7 +11,7 @@ from app.modules.server_registry.application.use_case.collect_and_persist_all_mo
 from app.modules.server_registry.application.use_case.delete_server import delete_server_use_case
 from app.modules.server_registry.application.use_case.edit_server import edit_server_use_case
 from app.modules.server_registry.application.use_case.get_servers import get_servers_use_case
-from app.modules.server_registry.application.use_case.get_servers_with_containers import get_servers_with_containers_use_case
+from app.modules.server_registry.application.use_case.get_server_health import get_server_health_use_case
 from app.modules.server_registry.application.use_case.register_server import register_server_use_case
 from app.modules.server_registry.application.use_case.collect_and_persist_single_monitoring import collect_and_persist_single_monitoring_use_case
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
@@ -80,10 +81,20 @@ async def get_all_servers_and_containers(
     server_repo: ServerRepositoryInterface = Depends(get_server_repository),
     docker_repo: DockerRepositoryInterface = Depends(get_docker_repository),
 ):
-    results = await get_servers_with_containers_use_case(
-        server_repo,
-        docker_repo,
-    )
+    results = []
+    servers = await server_repo.get_all_servers()
+    for server in servers:
+        if server.id is None:
+            continue
+        server_health = await get_server_health_use_case(server.id, server_repo)
+        containers = await get_containers_use_case(server.id, docker_repo)
+    
+        results.append({
+            "server": server,
+            "server_health": server_health,
+            "containers": containers
+        })
+
     return {"status": "success", "data": results}
 
 @router.delete('/delete/{server_id}')

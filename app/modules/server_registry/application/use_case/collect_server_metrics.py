@@ -2,32 +2,20 @@ import logging
 from pydantic import BaseModel
 from datetime import datetime, timezone
 from app.core.Exception import ApplicationException, SSHConnectionException
-from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
-from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
-from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 from app.modules.server_registry.domain.entity.server_history import HealthStatushistory, ServerHistory
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
-from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
 
 logger = logging.getLogger(__name__)
 
-class ServerMonitoringResult(BaseModel):
-    server: Server
-    current_health: ServerHealth
-    containers: list[DockerContainer]
-
-async def collect_and_persist_single_monitoring_use_case(
+async def collect_server_metrics_use_case(
     server_id: int,
     server_repository: ServerRepositoryInterface,
-    docker_repository: DockerRepositoryInterface,
-    server_metrics_service: ServerMetricsService,
-    docker_metrics_service: DockerMetricService
-) -> ServerMonitoringResult:
+    server_metrics_service: ServerMetricsService
+) -> ServerHealth:
     
     server = await server_repository.get_server(server_id)
-    
     if not server:
         raise ApplicationException(f"Server {server_id} not found")
     
@@ -95,35 +83,4 @@ async def collect_and_persist_single_monitoring_use_case(
     
     await server_repository.persist_server_health_history(server_history)
     
-    containers = []
-    if server_health.status == HealthStatus.HEALTHY:
-        try:
-            docker_data = await docker_metrics_service.get_docker_metrics(server)
-            
-            for container_data in docker_data:
-                container = DockerContainer(**container_data)
-                
-                existing_container = await docker_repository.get_docker_container(
-                    container.name,
-                    server_id
-                )
-                
-                if existing_container and existing_container.status != container.status:
-                    container.state_changed_at = datetime.now(timezone.utc)
-                elif not existing_container:
-                    container.state_changed_at = datetime.now(timezone.utc)
-                
-                if existing_container:
-                    persisted = await docker_repository.update_docker_container(container)
-                else:
-                    persisted = await docker_repository.persist_docker_container(container)
-                
-                containers.append(persisted)
-        except Exception as e:
-            logger.error(f"Failed to collect containers for {server.ip_address}: {e}", exc_info=True)
-    
-    return ServerMonitoringResult(
-        server=server,
-        current_health=server_health,
-        containers=containers
-    )
+    return server_health

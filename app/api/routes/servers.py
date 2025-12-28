@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
-from app.core.Exception import SecurityException
+from app.core.Exception import ApplicationException, SecurityException
 from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
+from app.modules.docker_registry.application.use_case.collect_container_metrics import collect_container_metrics_use_case
 from app.modules.docker_registry.application.use_case.get_containers import get_containers_use_case
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
 from app.modules.docker_registry.infrastructure.dependencies.dependencies import get_docker_metrics_service, get_docker_repository
@@ -8,12 +9,12 @@ from app.modules.server_registry.application.request.register_server_location_re
 from app.modules.server_registry.application.request.update_server_request import UpdateServerRequest
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
 from app.modules.server_registry.application.use_case.collect_and_persist_all_monitoring import collect_and_persist_all_monitoring_use_case
+from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
 from app.modules.server_registry.application.use_case.delete_server import delete_server_use_case
 from app.modules.server_registry.application.use_case.edit_server import edit_server_use_case
 from app.modules.server_registry.application.use_case.get_servers import get_servers_use_case
 from app.modules.server_registry.application.use_case.get_server_health import get_server_health_use_case
 from app.modules.server_registry.application.use_case.register_server import register_server_use_case
-from app.modules.server_registry.application.use_case.collect_and_persist_single_monitoring import collect_and_persist_single_monitoring_use_case
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
 from app.modules.auth.domain.entity.user import User
 from app.core.security import get_current_user
@@ -33,23 +34,40 @@ async def register_server(
     server = await register_server_use_case(request, server_repository)
     return {"status": "success", "data": server}
 
-@router.get("/monitoting/{server_id}")
-async def get_server_health(
+@router.post("/containers/collect/{server_id}")
+async def collect_server_monitoring(
     server_id: int,
-    current_user: User = Depends(get_current_user),
-    server_repository: ServerRepositoryInterface = Depends(get_server_repository),
-    docker_repository: DockerRepositoryInterface = Depends(get_docker_repository),
+    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
+    docker_repo: DockerRepositoryInterface = Depends(get_docker_repository),
     server_metrics: ServerMetricsService = Depends(get_server_metrics_service),
     docker_metrics: DockerMetricService = Depends(get_docker_metrics_service)
 ):
-    results = await collect_and_persist_single_monitoring_use_case(
+    server = await server_repo.get_server(server_id)
+    if not server:
+        raise ApplicationException(f"Server {server_id} not found")
+    
+    server_health = await collect_server_metrics_use_case(
         server_id,
-        server_repository,
-        docker_repository,
-        server_metrics,
+        server_repo,
+        server_metrics
+    )
+    
+    containers = await collect_container_metrics_use_case(
+        server_id,
+        server,
+        server_health,
+        docker_repo,
         docker_metrics
     )
-    return {"status": "success", "data": results}
+    
+    return {
+        "status": "success",
+        "data": {
+            "server": server,
+            "current_health": server_health,
+            "containers": containers
+        }
+    }
 
 @router.get("/all-servers")
 async def get_servers(

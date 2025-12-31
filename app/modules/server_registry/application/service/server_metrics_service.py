@@ -3,6 +3,7 @@ from app.core.ssh_client import SSHClientInterface
 from abc import ABC, abstractmethod
 import logging
 import asyncio
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,8 @@ class ServerMetricsService(ServerMetricsServiceInterface):
                     'disk_usage': parse_float(lines[2]) if len(lines) > 2 else 0.0,
                     'uptime': lines[3] if len(lines) > 3 else 'unknown',
                     'server_id': server.id,
-                    'status': 'up'
+                    'status': 'healthy',
+                    'checked_at': datetime.now()
                 }
                 
         except asyncio.TimeoutError:
@@ -54,8 +56,8 @@ class ServerMetricsService(ServerMetricsServiceInterface):
                 'disk_usage': 0.0,
                 'uptime': 'timeout',
                 'server_id': server.id,
-                'status': 'timeout',
-                'error': 'Connection timeout after 30 seconds'
+                'status': 'error',
+                'checked_at': datetime.now()
             }
             
         except Exception as e:
@@ -66,8 +68,8 @@ class ServerMetricsService(ServerMetricsServiceInterface):
                 'disk_usage': 0.0,
                 'uptime': 'error',
                 'server_id': server.id,
-                'status': 'down',
-                'error': str(e)
+                'status': 'offline',
+                'checked_at': datetime.now()
             }
         
         finally:

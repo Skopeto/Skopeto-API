@@ -4,12 +4,17 @@ import oracledb
 from app.modules.database_registry.domain.entity.database import Database
 from app.core.encrypt import decrypt_password
 
-class DatabaseConnector: 
-    
+class DatabaseConnector:
+
     async def connect(self, database: Database):
         password = decrypt_password(database.encrypted_password)
-        
-        match database.db_type:
+
+        # Normalize database type (postgresql -> postgres)
+        db_type = database.db_type.lower()
+        if db_type == 'postgresql':
+            db_type = 'postgres'
+
+        match db_type:
             case 'postgres':
                 return await asyncpg.connect(
                     host=database.host,
@@ -37,6 +42,11 @@ class DatabaseConnector:
                 raise ValueError(f"Unsupported database type: {database.db_type}")
     
     async def execute_test_query(self, connection, db_type: str):
+        # Normalize database type (postgresql -> postgres)
+        db_type = db_type.lower()
+        if db_type == 'postgresql':
+            db_type = 'postgres'
+
         match db_type:
             case 'postgres':
                 return await connection.fetchval('SELECT 1')
@@ -57,6 +67,11 @@ class DatabaseConnector:
                 raise ValueError(f"Unsupported database type: {db_type}")
     
     async def close_connection(self, connection, db_type: str):
+        # Normalize database type (postgresql -> postgres)
+        db_type = db_type.lower()
+        if db_type == 'postgresql':
+            db_type = 'postgres'
+
         match db_type:
             case 'postgres':
                 await connection.close()

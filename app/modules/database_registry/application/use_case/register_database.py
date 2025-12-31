@@ -10,7 +10,7 @@ async def register_database_use_case(
     database_repo: DatabaseRepositoryInterface
 ) -> Database:
     database_data = request.model_dump()
-    database_data['encrypted_passsword'] = encrypt_password(database_data.pop('password'))
+    database_data['encrypted_password'] = encrypt_password(database_data.pop('password'))
     database_data['created_at'] = datetime.now(timezone.utc)
 
     database = Database(**database_data)

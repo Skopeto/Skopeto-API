@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends
 import logging
 from pydantic import BaseModel
+from app.modules.database_registry.application.request.register_database_request import RegisterDatabaseRequest
 from app.modules.database_registry.application.service.database_connector import DatabaseConnector
 from app.modules.database_registry.application.service.database_metrics_service import DatabaseMetricsServiceInterface
 from app.modules.database_registry.application.use_case.collect_database_health import collect_databases_for_server_use_case, DatabaseWithHealth
+from app.modules.database_registry.application.use_case.register_database import register_database_use_case
 from app.modules.database_registry.domain.repository.database_repository import DatabaseRepositoryInterface
 from app.modules.database_registry.infrastructure.dependencies.dependencies import get_database_connector, get_database_metrics_service, get_database_repository
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsServiceInterface
@@ -21,7 +23,7 @@ router = APIRouter(prefix="/databases", tags=["Databases"])
 
 class ServerAndDatabaseHealthResponse(BaseModel):
     server: Server
-    server_health: ServerHealth
+    current_health: ServerHealth
     databases: list[DatabaseWithHealth]
 
 
@@ -61,9 +63,22 @@ async def get_databases(
         results.append(
             ServerAndDatabaseHealthResponse(
                 server=server,
-                server_health=server_health,
+                current_health=server_health,
                 databases=databases,
             )
         )
 
     return {"status": "success", "data": results}
+
+
+@router.post('/register')
+async def register_database(
+    request: RegisterDatabaseRequest,
+    database_repo: DatabaseRepositoryInterface = Depends(get_database_repository),
+    current_user: User = Depends(get_current_user),
+):
+    registered_db = await register_database_use_case(
+        request,
+        database_repo
+    )
+    return {"status": "success", "data": registered_db}

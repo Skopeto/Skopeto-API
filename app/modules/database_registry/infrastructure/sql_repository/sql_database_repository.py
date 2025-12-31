@@ -42,8 +42,10 @@ def database_health_from_db(row: dict[str, Any] | None) -> DatabaseHealth | None
         'id' : row['id'],
         'database_id' : row['database_id'],
         'status' : row['status'],
-        'response_time' : row['response_time'],
-        'active_connections' : row['active_connections'],
+        'connection_time_ms' : row['connection_time_ms'],
+        'is_connected' : row['is_connected'],
+        'query_time_ms' : row['query_time_ms'],
+        'error_message' : row['error_message'],
         'checked_at' : checked_at,
     }
     return DatabaseHealth.model_construct(**database_health_attrs)

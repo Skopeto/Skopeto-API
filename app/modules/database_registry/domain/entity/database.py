@@ -9,8 +9,8 @@ class Database(BaseModel):
     db_type: str                   
     host: str        
     port: int
-    database_name: str
-    service_name: str
+    database_name: Optional[str]
+    service_name: Optional[str]
     username: str
     encrypted_password: str
     created_at: datetime

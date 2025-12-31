@@ -1,11 +1,17 @@
 from app.modules.server_registry.domain.entity.server import Server
 from app.core.ssh_client import SSHClientInterface
+from abc import ABC, abstractmethod
 import logging
 import asyncio
 
 logger = logging.getLogger(__name__)
 
-class ServerMetricsService:
+class ServerMetricsServiceInterface(ABC):
+    @abstractmethod
+    async def get_server_metrics(self, server: Server) -> dict:
+        pass
+
+class ServerMetricsService(ServerMetricsServiceInterface):
     def __init__(self, ssh_client: SSHClientInterface):
         self.ssh_client = ssh_client
     

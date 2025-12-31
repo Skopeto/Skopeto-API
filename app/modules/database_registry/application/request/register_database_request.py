@@ -1,13 +1,13 @@
+from typing import Optional
 from pydantic import BaseModel
 
 class RegisterDatabaseRequest(BaseModel):
     server_id: int              
     name: str             
-    type: str                 
+    db_type: str                 
     host: str        
     port: int
-    database_name: str   
-    sid: str | None = None     
-    service_name: str | None = None 
+    database_name: Optional[str]    
+    service_name: Optional[str]   
     username: str
     password: str

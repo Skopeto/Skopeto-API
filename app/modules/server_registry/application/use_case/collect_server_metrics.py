@@ -1,5 +1,4 @@
 import logging
-from pydantic import BaseModel
 from datetime import datetime, timezone
 from app.core.Exception import ApplicationException, SSHConnectionException
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService

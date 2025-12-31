@@ -1,16 +1,27 @@
 import time
 from datetime import datetime, timezone
 from app.modules.database_registry.application.service.database_connector import DatabaseConnector
+from app.modules.database_registry.domain.entity.database import Database
 from app.modules.database_registry.domain.entity.database_health import DatabaseHealth, DatabaseHealthStatus
+from abc import ABC, abstractmethod
+import logging
 
-class DatabaseMetricsService:
+logger = logging.getLogger(__name__)
+
+class DatabaseMetricsServiceInterface(ABC):
+    @abstractmethod
+    async def collect_health(self, database: Database, connector: DatabaseConnector) -> dict:
+        pass
+
+class DatabaseMetricsService(DatabaseMetricsServiceInterface):
     
-    async def get_database_health(
+    async def collect_health(
         self, 
         database,
         connector: DatabaseConnector
-    ) -> DatabaseHealth:
-        
+    ) -> DatabaseHealth | None:
+        if not database.id:
+                return None
         try:
             start = time.time()
             connection = await connector.connect(database)

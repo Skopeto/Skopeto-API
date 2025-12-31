@@ -2,6 +2,11 @@ from fastapi import APIRouter, Depends
 import logging
 import asyncio
 from app.core.Exception import ApplicationException, SecurityException
+from app.modules.database_registry.application.service.database_connector import DatabaseConnector
+from app.modules.database_registry.application.service.database_metrics_service import DatabaseMetricsServiceInterface
+from app.modules.database_registry.application.use_case.collect_database_health import collect_all_database_health_usecase
+from app.modules.database_registry.domain.repository.database_repository import DatabaseRepositoryInterface
+from app.modules.database_registry.infrastructure.dependencies.dependencies import get_database_connector, get_database_metrics_service, get_database_repository
 from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
 from app.modules.docker_registry.application.use_case.collect_container_metrics import collect_container_metrics_use_case
 from app.modules.docker_registry.application.use_case.get_containers import get_containers_use_case
@@ -9,7 +14,7 @@ from app.modules.docker_registry.domain.repository.docker_repository import Dock
 from app.modules.docker_registry.infrastructure.dependencies.dependencies import get_docker_metrics_service, get_docker_repository
 from app.modules.server_registry.application.request.register_server_location_request import RegisterServerLocationRequest
 from app.modules.server_registry.application.request.update_server_request import UpdateServerRequest
-from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
+from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService, ServerMetricsServiceInterface
 from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
 from app.modules.server_registry.application.use_case.delete_server import delete_server_use_case
 from app.modules.server_registry.application.use_case.edit_server import edit_server_use_case
@@ -179,3 +184,21 @@ async def edit_server(
         server_repo
     )
     return {"status": "success", "data": result}
+
+
+@router.get('/databases/collect/all')
+async def get_databases(
+    database_metrics: DatabaseMetricsServiceInterface = Depends(get_database_metrics_service),
+    connector: DatabaseConnector = Depends(get_database_connector),
+    database_repo: DatabaseRepositoryInterface = Depends(get_database_repository),
+    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
+    server_metrics: ServerMetricsServiceInterface = Depends(get_server_metrics_service),
+    current_user: User = Depends(get_current_user),
+):
+    return await collect_all_database_health_usecase(
+        database_metrics,
+        connector,
+        database_repo,
+        server_repo,
+        server_metrics,
+    )

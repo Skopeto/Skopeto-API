@@ -29,7 +29,7 @@ def database_from_db(row: dict[str, Any] | None) -> Database | None:
     }
     return Database.model_construct(**database_attrs)
 
-def databse_health_from_db(row: dict[str, Any] | None) -> DatabaseHealth | None:
+def database_health_from_db(row: dict[str, Any] | None) -> DatabaseHealth | None:
     if not row:
         return None
 
@@ -93,22 +93,18 @@ class SqlDatabaseRepository(DatabaseRepositoryInterface, SqlBaseRepository):
         try:
             query, params = get_database_health_query(database_id)
             sql_query = SqlQuery(self.session, query, params)
-            database_health = await sql_query.fetch_one(transformer=databse_health_from_db)
+            database_health = await sql_query.fetch_one(transformer=database_health_from_db)
             return database_health
         except Exception as e:
             logger.error(f"Database error while fetching database health {database_id}: {str(e)}", exc_info=True)
             raise RepositoryException("Failed to retrieve database health")
 
     async def update_database_health(self, database_health: DatabaseHealth) -> DatabaseHealth:
-        query, params = update_database_health_query(database_health)
-        sql_query = SqlQuery(self.session, query, params)
-        await sql_query.persist()
-        return database_health
-
-    # async def get_database_by_server_and_name(self, server_id: int, db_name: str) -> Database | None:
-    #     query, params = get_database_by_name_query(db_name)
-    #     sql_query = SqlQuery(self.session, query, params)
-    #     database = await sql_query.fetch_one(transformer=database_from_db)
-    #     if database and database.server_id == server_id:
-    #         return database
-    #     return None
+        try:
+            query, params = update_database_health_query(database_health)
+            sql_query = SqlQuery(self.session, query, params)
+            await sql_query.persist()
+            return database_health
+        except Exception as e:
+            logger.error(f"Database error while updating database health {database_health.id}: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to update database health")

@@ -20,7 +20,7 @@ def get_databases_query(server_id: int) -> tuple[str, dict[str, Any]]:
     FROM databases
     WHERE server_id = :server_id
     """
-    params: dict[str, Any] = {}
+    params: dict[str, Any] = {'server_id': server_id}
     return query, params
 
 def create_database_query(database: Database) -> tuple[str, dict[str, Any]]:
@@ -89,8 +89,8 @@ def create_database_health_query(database_health: DatabaseHealth) -> tuple[str, 
     INSERT INTO database_health (
         database_id,
         status,
-        coonection_time_ms,
-        is_connnected,
+        connection_time_ms,
+        is_connected,
         query_time_ms,
         error_message,
         checked_at
@@ -98,8 +98,10 @@ def create_database_health_query(database_health: DatabaseHealth) -> tuple[str, 
     VALUES (
         :database_id,
         :status,
-        :response_time,
-        :active_connections,
+        :connection_time_ms,
+        :is_connected,
+        :query_time_ms,
+        :error_message,
         :checked_at
     )
     """

@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends
 import logging
 import asyncio
+from pydantic import BaseModel
 from app.core.Exception import ApplicationException, SecurityException
 from app.modules.database_registry.application.service.database_connector import DatabaseConnector
 from app.modules.database_registry.application.service.database_metrics_service import DatabaseMetricsServiceInterface
-from app.modules.database_registry.application.use_case.collect_database_health import collect_all_database_health_usecase
+from app.modules.database_registry.application.use_case.collect_database_health import collect_databases_for_server_use_case, DatabaseWithHealth
 from app.modules.database_registry.domain.repository.database_repository import DatabaseRepositoryInterface
 from app.modules.database_registry.infrastructure.dependencies.dependencies import get_database_connector, get_database_metrics_service, get_database_repository
 from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
@@ -22,6 +23,7 @@ from app.modules.server_registry.application.use_case.get_servers import get_ser
 from app.modules.server_registry.application.use_case.get_server_health import get_server_health_use_case
 from app.modules.server_registry.application.use_case.register_server import register_server_use_case
 from app.modules.server_registry.domain.entity.server import Server
+from app.modules.server_registry.domain.entity.server_health import ServerHealth
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
 from app.modules.auth.domain.entity.user import User
 from app.core.security import get_current_user
@@ -30,6 +32,12 @@ from app.modules.server_registry.infrastructure.dependencies.dependencies import
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/servers", tags=["Servers"])
+
+
+class ServerAndDatabaseHealthResponse(BaseModel):
+    server: Server
+    server_health: ServerHealth
+    databases: list[DatabaseWithHealth]
 
 @router.post("/register", status_code=201)
 async def register_server(
@@ -195,10 +203,36 @@ async def get_databases(
     server_metrics: ServerMetricsServiceInterface = Depends(get_server_metrics_service),
     current_user: User = Depends(get_current_user),
 ):
-    return await collect_all_database_health_usecase(
-        database_metrics,
-        connector,
-        database_repo,
-        server_repo,
-        server_metrics,
-    )
+    """
+    Collects database health for all servers and their databases.
+    Orchestrates server and database modules.
+    """
+    results = []
+    servers = await server_repo.get_all_servers()
+
+    for server in servers:
+        if server.id is None:
+            continue
+
+        # Get server health (server module)
+        server_health_dict = await server_metrics.get_server_metrics(server)
+        server_health = ServerHealth(**server_health_dict)
+
+        # Get databases with health (database module - pass only server_id)
+        databases = await collect_databases_for_server_use_case(
+            server.id,
+            database_repo,
+            database_metrics,
+            connector,
+        )
+
+        # Combine results (orchestration)
+        results.append(
+            ServerAndDatabaseHealthResponse(
+                server=server,
+                server_health=server_health,
+                databases=databases,
+            )
+        )
+
+    return {"status": "success", "data": results}

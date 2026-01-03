@@ -222,3 +222,8 @@ def get_database_by_id_query(id: int) -> tuple[str, dict[str, Any]]:
     """
     params = {"id": id}
     return query, params
+
+def delete_database_query(database_id: int) -> tuple[str, dict]:
+    query = """DELETE FROM databases WHERE id = :database_id"""
+    params = {'database_id': database_id}
+    return query, params

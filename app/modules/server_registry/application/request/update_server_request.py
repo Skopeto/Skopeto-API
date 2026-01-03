@@ -1,6 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, IPvAnyAddress
-from app.modules.server_registry.domain.entity.server_status import ServerStatus
+from pydantic import BaseModel
 
 class UpdateServerRequest(BaseModel):
     name: Optional[str] = None

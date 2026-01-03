@@ -12,6 +12,7 @@ from app.modules.database_registry.domain.repository.database_repository import 
 from app.modules.database_registry.infrastructure.sql_query.sql_database_query import (
     create_database_health_query,
     create_database_query,
+    delete_database_query,
     get_database_by_id_query,
     get_database_by_name_query,
     get_database_health_query,
@@ -165,13 +166,9 @@ class SqlDatabaseRepository(DatabaseRepositoryInterface, SqlBaseRepository):
         
     async def delete_database(self, database_id: int) -> None:
         try:
-            query = """
-            DELETE FROM databases
-            WHERE id = :database_id
-            """
-            params = {"database_id": database_id}
-            sql_query = SqlQuery(self.session, query, params)
-            await sql_query.persist()
+           query, params = delete_database_query(database_id)
+           sql_query = SqlQuery(self.session, query, params)
+           await sql_query.persist()
         except Exception as e:
             logger.error(
                 f"Database error while deleting database {database_id}: {str(e)}",

@@ -38,6 +38,10 @@ class DatabaseRepositoryInterface(ABC):
     @abstractmethod
     async def get_database_by_id(self, id: int)-> Database:
         raise NotImplementedError()
+    
+    @abstractmethod
+    async def delete_database(self, id: int) -> None:
+        raise NotImplementedError()
 
     # @abstractmethod
     # async def get_database_by_server_and_name(self, server_id: int, db_name: str)-> Database:

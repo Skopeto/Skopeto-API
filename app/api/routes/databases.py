@@ -37,6 +37,7 @@ from app.modules.database_registry.infrastructure.dependencies.dependencies impo
 from app.modules.server_registry.application.service.server_metrics_service import (
     ServerMetricsServiceInterface,
 )
+from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
 from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.entity.server_health import ServerHealth
 from app.modules.server_registry.domain.repository.server_repository import (
@@ -83,8 +84,11 @@ async def get_databases(
             continue
 
         # Get server health (server module)
-        server_health_dict = await server_metrics.get_server_metrics(server)
-        server_health = ServerHealth(**server_health_dict)
+        server_health = await collect_server_metrics_use_case(
+            server.id,
+            server_repo,
+            server_metrics
+        )
 
         # Get databases with health (database module - pass only server_id)
         databases = await collect_databases_for_server_use_case(

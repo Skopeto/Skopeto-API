@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 from app.core.Exception import ApplicationException, SSHConnectionException
-from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
+from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsServiceInterface
 from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
 from app.modules.server_registry.domain.entity.server_history import HealthStatushistory, ServerHistory
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 async def collect_server_metrics_use_case(
     server_id: int,
     server_repository: ServerRepositoryInterface,
-    server_metrics_service: ServerMetricsService
+    server_metrics_service: ServerMetricsServiceInterface
 ) -> ServerHealth:
     
     server = await server_repository.get_server(server_id)

@@ -35,8 +35,8 @@ async def get_servers(
     current_user: User = Depends(get_current_user),
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
 ):
-    """Get all registered servers."""
     servers = await get_servers_use_case(server_repository)
+    
     return {"status": "success", "data": servers}
 
 

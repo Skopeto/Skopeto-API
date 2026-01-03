@@ -1,11 +1,20 @@
 from app.core.Exception import ApplicationException
-from app.modules.server_registry.application.request.update_server_request import UpdateServerRequest
+from app.modules.server_registry.application.request.update_server_request import (
+    UpdateServerRequest,
+)
 from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.entity.server_status import ServerStatus
-from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
+from app.modules.server_registry.domain.repository.server_repository import (
+    ServerRepositoryInterface,
+)
 from app.core.encrypt import encrypt_password
 
-async def edit_server_use_case(server_id: int, request: UpdateServerRequest, server_repository: ServerRepositoryInterface) -> Server:
+
+async def edit_server_use_case(
+    server_id: int,
+    request: UpdateServerRequest,
+    server_repository: ServerRepositoryInterface,
+) -> Server:
     server = await server_repository.get_server(server_id)
 
     if not server:

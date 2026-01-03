@@ -30,6 +30,14 @@ class DatabaseRepositoryInterface(ABC):
     @abstractmethod
     async def update_database_health(self, database_health: DatabaseHealth) ->DatabaseHealth:
         raise NotImplementedError()
+    
+    @abstractmethod
+    async def update_database(self, database: Database) -> Database:
+        raise NotImplementedError()
+    
+    @abstractmethod
+    async def get_database_by_id(self, id: int)-> Database:
+        raise NotImplementedError()
 
     # @abstractmethod
     # async def get_database_by_server_and_name(self, server_id: int, db_name: str)-> Database:

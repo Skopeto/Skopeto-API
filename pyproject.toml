@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aiomysql>=0.3.2",
+    "aiosmtplib>=5.0.0",
     "apscheduler>=3.11.2",
     "argon2-cffi>=25.1.0",
     "asyncpg>=0.31.0",

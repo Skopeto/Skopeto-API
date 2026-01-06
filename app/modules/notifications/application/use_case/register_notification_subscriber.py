@@ -1,0 +1,23 @@
+
+
+from app.modules.notifications.application.request.notification_request import NotificationSubscriberRequest
+from app.modules.notifications.domain.entity.notification_subscriber import NotificationChannel, NotificationSubscriber
+from app.modules.notifications.domain.repository.notification_repository_interface import NotificationRepositoryInterface
+
+
+async def register_notification_subscriber(
+    request: NotificationSubscriberRequest,
+    notification_repository: NotificationRepositoryInterface
+) -> NotificationSubscriber:
+    
+    notification_subscriber = NotificationSubscriber(
+        user_id=request.user_id,
+        user_name=request.user_name,
+        delivery_address_email=request.delivery_address_email,
+        slack_webhook_url=request.slack_webhook_url,
+        notification_channel=NotificationChannel(request.notification_channel),
+        subscribed_at=request.subscribed_at,
+        is_active=True
+    )
+    saved_subscriber = await notification_repository.persist_notification_subscriber(notification_subscriber)
+    return saved_subscriber 

@@ -1,12 +1,12 @@
 
 
-from app.modules.notifications.application.request.notification_request import NotificationSubscriberRequest
+from app.modules.notifications.application.request.register_notification_subscriber_request import RegisterNotificationSubscriberRequest
 from app.modules.notifications.domain.entity.notification_subscriber import NotificationChannel, NotificationSubscriber
 from app.modules.notifications.domain.repository.notification_repository_interface import NotificationRepositoryInterface
 
 
 async def register_notification_subscriber(
-    request: NotificationSubscriberRequest,
+    request: RegisterNotificationSubscriberRequest,
     notification_repository: NotificationRepositoryInterface
 ) -> NotificationSubscriber:
     
@@ -20,4 +20,4 @@ async def register_notification_subscriber(
         is_active=True
     )
     saved_subscriber = await notification_repository.persist_notification_subscriber(notification_subscriber)
-    return saved_subscriber 
+    return saved_subscriber

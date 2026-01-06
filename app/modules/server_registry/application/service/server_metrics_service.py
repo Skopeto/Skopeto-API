@@ -18,7 +18,7 @@ class ServerMetricsService(ServerMetricsServiceInterface):
     
     async def get_server_metrics(self, server: Server) -> dict:
         try:
-            async with asyncio.timeout(30):
+            async with asyncio.timeout(10):
                 self.ssh_client.connect(server)
                 
                 command = (
@@ -77,3 +77,4 @@ class ServerMetricsService(ServerMetricsServiceInterface):
                 self.ssh_client.disconnect()
             except:
                 pass
+                

@@ -71,4 +71,12 @@ def get_user_by_username_or_email_query(username: str, email: str) -> tuple[str,
     OR email = :email
     """
     params = {'username': username, 'email': email}
-    return query, params    
+    return query, params 
+
+def get_users_query() -> tuple[str, dict[str, Any]]:
+    query = """
+    SELECT *
+    FROM users
+    """
+    params = {}
+    return query, params   

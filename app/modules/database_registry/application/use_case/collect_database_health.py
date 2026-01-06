@@ -24,10 +24,7 @@ async def collect_databases_for_server_use_case(
     database_metrics: DatabaseMetricsServiceInterface,
     connector: DatabaseConnector,
 ) -> list[DatabaseWithHealth]:
-    """
-    Collects database health for all databases on a specific server.
-    This use case only handles database-specific logic.
-    """
+    
     databases = await database_repo.get_databases_by_server_id(server_id)
 
     database_health_tasks = []

@@ -22,3 +22,7 @@ class UserRepositoryInterface(ABC):
     @abstractmethod
     async def get_by_username_or_email(self, username: str, email: str) -> Optional[User]:
         raise NotImplementedError()
+    
+    @abstractmethod
+    async def get_users(self) -> list[User] | None:
+        raise NotImplementedError()

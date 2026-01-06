@@ -1,6 +1,7 @@
 import datetime
 from typing import Any
 import logging
+import json
 from app.core.Exception import RepositoryException
 from app.core.base_repository import SqlBaseRepository
 from app.core.sql_query import SqlQuery
@@ -11,12 +12,11 @@ from app.modules.auth.infrastructure.sql_query.user_query import (
     get_user_by_username_query,
     get_user_query,
     get_user_by_token_query,
-    get_user_by_username_or_email_query
+    get_user_by_username_or_email_query,
+    get_users_query
 )
 
 logger = logging.getLogger(__name__)
-
-import json
 
 def user_from_db(row: dict[str, Any] | None) -> User | None:
     if not row:
@@ -93,3 +93,13 @@ class SqlUserRepository(UserRepositoryInterface, SqlBaseRepository):
         except Exception as e:
             logger.error(f"Database error while checking username/email: {str(e)}", exc_info=True)
             raise RepositoryException("Failed to check user existence")
+        
+    async def get_users(self) -> list[User | None]:
+        try:
+            query, params = get_users_query()
+            sql_query = SqlQuery(self.session, query, params)
+            users = await sql_query.fetch_all(transformer=user_from_db)
+            return users
+        except Exception as e:
+            logger.error(f"Database error while fetching users: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to retrieve users")

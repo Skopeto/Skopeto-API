@@ -4,11 +4,23 @@ from app.modules.notifications.domain.entity.notification_subscriber import Noti
 
 class NotificationRepositoryInterface(ABC):
     @abstractmethod
-    async def get_active_subscribers(self) -> list[NotificationSubscriber]:
+    async def create_notification(self, notification: Notification) -> Notification:
         pass
 
     @abstractmethod
-    async def create_notification(self, notification: Notification) -> Notification:
+    async def get_notification_by_id(self, notification_id: int) -> Notification | None:
+        pass
+
+    @abstractmethod
+    async def mark_notification_as_read(self, notification_id: int) -> None:
+        pass
+
+    @abstractmethod
+    async def delete_notification(self, notification_id: int) -> None:
+        pass
+
+    @abstractmethod
+    async def get_active_subscribers(self) -> list[NotificationSubscriber]:
         pass
 
     @abstractmethod
@@ -21,4 +33,13 @@ class NotificationRepositoryInterface(ABC):
 
     @abstractmethod
     async def delete_notification_subscriber(self, subscriber_id: int) -> None:
-        pass    
+        pass
+
+    @abstractmethod
+    async def get_subscriber_by_id(self, subscriber_id: int) -> NotificationSubscriber | None:
+        pass
+
+    @abstractmethod
+    async def get_subscribers(self) -> list[NotificationSubscriber | None]:
+        pass
+

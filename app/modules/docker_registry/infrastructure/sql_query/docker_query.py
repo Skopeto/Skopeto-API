@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 
@@ -31,6 +30,7 @@ def create_docker_container_query(container: DockerContainer) -> tuple[str, dict
     )
     RETURNING id
     """
+    #TO DO : NEED TO REMOVE RETURNING id 
     params = {
         'server_id': container.server_id,
         'container_id': container.container_id,

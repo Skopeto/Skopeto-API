@@ -128,6 +128,34 @@ CREATE TABLE database_health (
     CONSTRAINT chk_database_health_query_time CHECK (query_time_ms >= 0)
 );
 
+-- Notifications table
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT fk_notifications_user FOREIGN KEY (user_id)
+        REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Notification Subscribers table
+CREATE TABLE notification_subscribers (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    user_name VARCHAR(100) NOT NULL,
+    delivery_address_email VARCHAR(255),
+    notification_channel VARCHAR(20) NOT NULL,
+    slack_webhook_url VARCHAR(500),
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT fk_notification_subscribers_user FOREIGN KEY (user_id)
+        REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT chk_notification_channel CHECK (notification_channel IN ('email', 'slack', 'sms')),
+    CONSTRAINT uq_notification_subscribers UNIQUE (user_id, notification_channel)
+);
+
 -- ============================================
 -- INDEXES
 -- ============================================
@@ -168,6 +196,18 @@ CREATE INDEX idx_database_health_database_id ON database_health(database_id);
 CREATE INDEX idx_database_health_checked_at ON database_health(checked_at);
 CREATE INDEX idx_database_health_status ON database_health(status);
 CREATE INDEX idx_database_health_is_connected ON database_health(is_connected);
+
+-- Notifications indexes
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_is_read ON notifications(is_read);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at);
+CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read);
+
+-- Notification Subscribers indexes
+CREATE INDEX idx_notification_subscribers_user_id ON notification_subscribers(user_id);
+CREATE INDEX idx_notification_subscribers_channel ON notification_subscribers(notification_channel);
+CREATE INDEX idx_notification_subscribers_is_active ON notification_subscribers(is_active);
+CREATE INDEX idx_notification_subscribers_active_channels ON notification_subscribers(is_active, notification_channel);
 
 -- ============================================
 -- FUNCTIONS FOR UPDATED_AT TRIGGER
@@ -211,6 +251,8 @@ COMMENT ON TABLE server_history IS 'Stores historical health metrics for trend a
 COMMENT ON TABLE docker_containers IS 'Stores Docker container information from monitored servers';
 COMMENT ON TABLE databases IS 'Stores database connection details for monitoring';
 COMMENT ON TABLE database_health IS 'Stores current health metrics for monitored databases';
+COMMENT ON TABLE notifications IS 'Stores in-app notifications for users';
+COMMENT ON TABLE notification_subscribers IS 'Stores user notification preferences and delivery channels';
 
 COMMENT ON COLUMN users.roles IS 'JSON array of roles: superadmin, admin, or user';
 COMMENT ON COLUMN servers.ssh_password_encrypted IS 'Encrypted SSH password for server access';
@@ -223,3 +265,15 @@ COMMENT ON COLUMN databases.service_name IS 'Service name for Oracle databases (
 COMMENT ON COLUMN database_health.connection_time_ms IS 'Time taken to establish connection in milliseconds';
 COMMENT ON COLUMN database_health.query_time_ms IS 'Time taken to execute test query in milliseconds';
 COMMENT ON COLUMN database_health.checked_at IS 'Timestamp when health check was performed';
+COMMENT ON COLUMN notifications.user_id IS 'Foreign key to users table';
+COMMENT ON COLUMN notifications.title IS 'Notification title/subject';
+COMMENT ON COLUMN notifications.message IS 'Notification message content';
+COMMENT ON COLUMN notifications.is_read IS 'Whether the notification has been read by the user';
+COMMENT ON COLUMN notifications.created_at IS 'Timestamp when notification was created';
+COMMENT ON COLUMN notification_subscribers.user_id IS 'Foreign key to users table';
+COMMENT ON COLUMN notification_subscribers.user_name IS 'Username for reference';
+COMMENT ON COLUMN notification_subscribers.delivery_address_email IS 'Email address for email notifications';
+COMMENT ON COLUMN notification_subscribers.notification_channel IS 'Delivery channel: email, slack, or sms';
+COMMENT ON COLUMN notification_subscribers.slack_webhook_url IS 'Slack webhook URL for Slack notifications (optional)';
+COMMENT ON COLUMN notification_subscribers.is_active IS 'Whether the subscription is active';
+COMMENT ON COLUMN notification_subscribers.subscribed_at IS 'Timestamp when user subscribed';

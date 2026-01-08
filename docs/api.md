@@ -133,6 +133,99 @@ Authenticate and receive an access token.
 
 ---
 
+## User Endpoints
+
+### List Users
+
+Retrieve all registered users.
+
+**Endpoint:** `GET /users`
+
+**Authentication:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "user_name": "johndoe",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john@example.com",
+      "roles": ["admin"],
+      "is_active": true,
+      "is_superuser": false,
+      "created_at": "2025-12-20T10:00:00Z",
+      "updated_at": "2025-12-20T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "user_name": "janedoe",
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "email": "jane@example.com",
+      "roles": ["user"],
+      "is_active": true,
+      "is_superuser": false,
+      "created_at": "2025-12-21T14:30:00Z",
+      "updated_at": "2025-12-21T14:30:00Z"
+    }
+  ]
+}
+```
+
+**Note:** Passwords are never included in API responses.
+
+---
+
+### Get User by ID
+
+Retrieve a specific user by their ID.
+
+**Endpoint:** `GET /users/{user_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `user_id`: Integer ID of the user
+
+**Example:** `GET /users/1`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "user_name": "johndoe",
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john@example.com",
+    "roles": ["admin"],
+    "is_active": true,
+    "is_superuser": false,
+    "created_at": "2025-12-20T10:00:00Z",
+    "updated_at": "2025-12-20T10:00:00Z"
+  }
+}
+```
+
+**Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Users not found"
+}
+```
+
+**Note:** Passwords are never included in API responses.
+
+---
+
 ## Server Endpoints
 
 ### Create Server
@@ -729,6 +822,243 @@ Delete a database from monitoring.
 
 ---
 
+## Notification Endpoints
+
+### Register Notification Subscriber
+
+Register a user to receive notifications through a specific channel.
+
+**Endpoint:** `POST /notifications/subscriber`
+
+**Authentication:** Required
+
+**Request Body:**
+
+```json
+{
+  "user_id": 1,
+  "user_name": "johndoe",
+  "delivery_address_email": "john@example.com",
+  "notification_channel": "email",
+  "slack_webhook_url": null
+}
+```
+
+**Field Details:**
+- `user_id`: ID of the user (must match authenticated user)
+- `user_name`: Username for reference
+- `delivery_address_email`: Email address for email notifications (optional, required for email channel)
+- `notification_channel`: One of: `"email"`, `"slack"`, `"sms"`
+- `slack_webhook_url`: Slack webhook URL (optional, required for slack channel)
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "user_id": 1,
+    "user_name": "johndoe",
+    "delivery_address_email": "john@example.com",
+    "notification_channel": "email",
+    "slack_webhook_url": null,
+    "is_active": true,
+    "subscribed_at": "2026-01-08T17:30:00Z"
+  }
+}
+```
+
+**Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "Cannot register notification subscriber for another user"
+}
+```
+
+**Notes:**
+- Each user can have one subscription per channel (enforced by unique constraint)
+- Attempting to register the same channel twice will result in an error
+
+---
+
+### List Notification Subscribers
+
+Retrieve all notification subscribers.
+
+**Endpoint:** `GET /notifications/subscribers`
+
+**Authentication:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "user_name": "johndoe",
+      "delivery_address_email": "john@example.com",
+      "notification_channel": "email",
+      "slack_webhook_url": null,
+      "is_active": true,
+      "subscribed_at": "2026-01-08T17:30:00Z"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "user_name": "johndoe",
+      "delivery_address_email": null,
+      "notification_channel": "slack",
+      "slack_webhook_url": "https://hooks.slack.com/services/...",
+      "is_active": true,
+      "subscribed_at": "2026-01-08T18:00:00Z"
+    }
+  ]
+}
+```
+
+**Notes:**
+- Returns all subscribers across all users
+- Includes both active and inactive subscriptions
+
+---
+
+### Update Notification Subscriber
+
+Update notification subscriber preferences.
+
+**Endpoint:** `PATCH /notifications/subscribers/{subscriber_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `subscriber_id`: Integer ID of the subscriber to update
+
+**Request Body:**
+
+All fields are optional - only provide the fields you want to update:
+
+```json
+{
+  "user_name": "johndoe_updated",
+  "delivery_address_email": "newemail@example.com",
+  "slack_webhook_url": "https://hooks.slack.com/services/new...",
+  "notification_channel": "slack",
+  "is_active": false
+}
+```
+
+**Field Details:**
+- `user_name`: Updated username (optional)
+- `delivery_address_email`: Updated email address (optional)
+- `slack_webhook_url`: Updated Slack webhook URL (optional)
+- `notification_channel`: Change notification channel (optional)
+- `is_active`: Enable/disable subscription (optional)
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "user_id": 1,
+    "user_name": "johndoe_updated",
+    "delivery_address_email": "newemail@example.com",
+    "notification_channel": "email",
+    "slack_webhook_url": null,
+    "is_active": false,
+    "subscribed_at": "2026-01-08T17:30:00Z"
+  }
+}
+```
+
+**Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Notification subscriber with id 1 not found"
+}
+```
+
+---
+
+### Delete Notification Subscriber
+
+Remove a notification subscriber.
+
+**Endpoint:** `DELETE /notifications/subscribers/{subscriber_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `subscriber_id`: Integer ID of the subscriber to delete
+
+**Example:** `DELETE /notifications/subscribers/1`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "message": "Subscriber 1 deleted successfully."
+}
+```
+
+---
+
+### Mark Notification as Read
+
+Mark a notification as read for a user.
+
+**Endpoint:** `POST /notifications/markAsRead/{notification_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `notification_id`: Integer ID of the notification to mark as read
+
+**Example:** `POST /notifications/markAsRead/5`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "message": "Notification 5 marked as read."
+}
+```
+
+---
+
+### Delete Notification
+
+Delete a notification.
+
+**Endpoint:** `DELETE /notifications/{notification_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `notification_id`: Integer ID of the notification to delete
+
+**Example:** `DELETE /notifications/3`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "message": "Notification 3 deleted successfully."
+}
+```
+
+---
+
 ## Error Handling
 
 ### Common HTTP Status Codes
@@ -796,7 +1126,21 @@ curl -X POST http://localhost:8000/auth/login \
   }'
 ```
 
-**3. Use token to create a server:**
+**3. List all users:**
+
+```bash
+curl -X GET http://localhost:8000/users \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**4. Get user by ID:**
+
+```bash
+curl -X GET http://localhost:8000/users/1 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**5. Use token to create a server:**
 
 ```bash
 curl -X POST http://localhost:8000/servers \
@@ -812,28 +1156,28 @@ curl -X POST http://localhost:8000/servers \
   }'
 ```
 
-**4. List all servers:**
+**6. List all servers:**
 
 ```bash
 curl -X GET http://localhost:8000/servers \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**5. Collect container metrics for a server:**
+**7. Collect container metrics for a server:**
 
 ```bash
 curl -X POST http://localhost:8000/containers/1/collect \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**6. List all containers:**
+**8. List all containers:**
 
 ```bash
 curl -X GET http://localhost:8000/containers \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**7. Update server:**
+**9. Update server:**
 
 ```bash
 curl -X PATCH http://localhost:8000/servers/1 \
@@ -845,28 +1189,28 @@ curl -X PATCH http://localhost:8000/servers/1 \
   }'
 ```
 
-**8. Delete server:**
+**10. Delete server:**
 
 ```bash
 curl -X DELETE http://localhost:8000/servers/1 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**9. Collect all monitoring data:**
+**11. Collect all monitoring data:**
 
 ```bash
 curl -X POST http://localhost:8000/monitoring/collect \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**10. Get database health:**
+**12. Get database health:**
 
 ```bash
 curl -X GET http://localhost:8000/databases/health \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**11. Create database:**
+**13. Create database:**
 
 ```bash
 curl -X POST http://localhost:8000/databases \
@@ -883,7 +1227,7 @@ curl -X POST http://localhost:8000/databases \
   }'
 ```
 
-**12. Update database:**
+**14. Update database:**
 
 ```bash
 curl -X PATCH http://localhost:8000/databases/1 \
@@ -895,10 +1239,64 @@ curl -X PATCH http://localhost:8000/databases/1 \
   }'
 ```
 
-**13. Delete database:**
+**15. Delete database:**
 
 ```bash
 curl -X DELETE http://localhost:8000/databases/1 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**16. Register notification subscriber:**
+
+```bash
+curl -X POST http://localhost:8000/notifications/subscriber \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "user_id": 1,
+    "user_name": "johndoe",
+    "delivery_address_email": "john@example.com",
+    "notification_channel": "email",
+    "slack_webhook_url": null
+  }'
+```
+
+**17. List notification subscribers:**
+
+```bash
+curl -X GET http://localhost:8000/notifications/subscribers \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**18. Update notification subscriber:**
+
+```bash
+curl -X PATCH http://localhost:8000/notifications/subscribers/1 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "is_active": false
+  }'
+```
+
+**19. Delete notification subscriber:**
+
+```bash
+curl -X DELETE http://localhost:8000/notifications/subscribers/1 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**20. Mark notification as read:**
+
+```bash
+curl -X POST http://localhost:8000/notifications/markAsRead/5 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**21. Delete notification:**
+
+```bash
+curl -X DELETE http://localhost:8000/notifications/3 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 

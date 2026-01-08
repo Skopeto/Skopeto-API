@@ -1,7 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
 
-
 class Notification(BaseModel):
     id: int | None = None
     user_id: int

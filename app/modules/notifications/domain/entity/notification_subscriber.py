@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 class NotificationChannel(str, Enum):
     EMAIL = "email"
@@ -8,9 +8,10 @@ class NotificationChannel(str, Enum):
     SMS = "sms"
 
 class NotificationSubscriber(BaseModel):
+    id: int | None = None
     user_id: int
     user_name: str
-    delivery_address_email: str
+    delivery_address_email: EmailStr | None = None
     notification_channel: NotificationChannel
     slack_webhook_url: str | None = None
     subscribed_at: datetime

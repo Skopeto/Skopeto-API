@@ -28,9 +28,12 @@ async def collect_server_metrics_use_case(
         elif metrics_status in ('down', 'error'):
             health_status = HealthStatus.ERROR
             history_status = HealthStatushistory.ERROR
-        else:
+        elif metrics_status == 'healthy':
             health_status = HealthStatus.HEALTHY
             history_status = HealthStatushistory.HEALTHY
+        else:
+            health_status = HealthStatus.UNHEALTHY
+            history_status = HealthStatushistory.UNHEALTHY
         
         server_health = ServerHealth(
             server_id=server_id,

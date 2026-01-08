@@ -14,7 +14,7 @@ async def create_notification_and_notify_subscriber(
     if not notification_subscribers:
         return
     for subscriber in notification_subscribers:
-        await notification_service.send_notification_to_subscribers(subscriber, message, title)
+        await notification_service.send_notification_to_subscribers(subscriber, title, message)
 
         notification = Notification(
             user_id=subscriber.user_id,

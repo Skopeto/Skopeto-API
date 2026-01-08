@@ -1,6 +1,7 @@
 from aiosmtplib import SMTP
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from asyncssh import logger
 import httpx
 from abc import ABC, abstractmethod
 from app.core.Exception import ApplicationException
@@ -48,14 +49,14 @@ class NotificationService(NotificationServiceInterface):
         message: str, 
     ) -> None:
         if notification_subscriber.notification_channel == "email":
-            if not notification_subscriber.delivery_address_email:
-                raise ApplicationException("Email address is required for email notifications")
-            await self.send_email(notification_subscriber.delivery_address_email, title, message)
+            if notification_subscriber.delivery_address_email:
+                await self.send_email(notification_subscriber.delivery_address_email, title, message)
+            else:
+                logger.warning(f"Skipping email notification for subscriber {notification_subscriber.user_id}: no email set")
         elif notification_subscriber.notification_channel == "slack":
-            if not notification_subscriber.slack_webhook_url:
-                raise ApplicationException("Slack webhook URL is required for Slack notifications")
-            await self.send_slack_notification(notification_subscriber.slack_webhook_url, message)
-        elif notification_subscriber.notification_channel == "sms":
-            pass
+            if notification_subscriber.slack_webhook_url:
+                await self.send_slack_notification(notification_subscriber.slack_webhook_url, message)
+            else:
+                logger.warning(f"Skipping Slack notification for subscriber {notification_subscriber.user_id}: no webhook URL set")
         else:
             raise ApplicationException(f"Unsupported notification channel: {notification_subscriber.notification_channel}")

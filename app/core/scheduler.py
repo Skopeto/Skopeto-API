@@ -23,7 +23,6 @@ scheduler = AsyncIOScheduler()
 async def scheduled_monitoring_task():
     logger.info("Starting scheduled monitoring collection...")
 
-    # Step 1: fetch servers using ONE short-lived session
     async with SessionManager.session_scope() as session:
         server_repo = SqlServerRepository(session)
         servers = await server_repo.get_all_servers()
@@ -66,19 +65,21 @@ async def scheduled_monitoring_task():
                     docker_metrics
                 )
 
+                # to be absatracted to a service later
+                alerts = []
+
                 for container in containers:
                     if container.status in {"exited", "dead"}:
-                        await create_notification_and_notify_subscriber(
-                            message=f"{container.status} status on container {container.name} of server {server.ip_address} {server.user_name}",
-                            title="Container Status Alert",
-                            notification_repository=notification_repository,
-                            notification_service=notification_service
-                        )
+                        alerts.append(f"Container {container.name} is {container.status} on {server.ip_address} ({server.user_name})")
 
                 if server_health.status in {"unhealthy", "offline", "error"}:
+                    alerts.append(f"Server {server.ip_address} ({server.user_name}) status: {server_health.status}")
+
+                if alerts:
+                    message = "\n".join(alerts)
                     await create_notification_and_notify_subscriber(
-                        message=f"{server_health.status} status on {server.ip_address} {server.user_name}",
-                        title="Server Health Alert",
+                        message=message,
+                        title="Skopeto Monitoring Alerts",
                         notification_repository=notification_repository,
                         notification_service=notification_service
                     )
@@ -100,7 +101,7 @@ async def scheduled_monitoring_task():
 def start_scheduler():
     scheduler.add_job(
         scheduled_monitoring_task,
-        trigger=IntervalTrigger(minutes=10),
+        trigger=IntervalTrigger(minutes=100),
         id='monitoring_collection',
         name='Collect server and container monitoring data',
         replace_existing=True

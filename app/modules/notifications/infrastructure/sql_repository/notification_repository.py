@@ -44,6 +44,7 @@ def notification_subsciber_from_db(row: dict[str, Any] | None) -> NotificationSu
         'id': row['id'],
         'user_id': row['user_id'],
         'user_name': row['user_name'],
+        'delivery_address_email': row['delivery_address_email'],
         'notification_channel': NotificationChannel(row['notification_channel']),
         'slack_webhook_url': row['slack_webhook_url'],
         'subscribed_at': row['subscribed_at'],
@@ -57,7 +58,7 @@ class SqlNotificationRepository(NotificationRepositoryInterface, SqlBaseReposito
         try:
             query,params = create_notification_query(notification)
             sql_query = SqlQuery(self.session, query, params)
-            await sql_query.fetch_one(transformer=notification_from_db)
+            await sql_query.persist()
         except Exception as e:
             logger.error(f"Error creating notification: {e}")
             raise RepositoryException("Failed to create notification") from e
@@ -92,7 +93,7 @@ class SqlNotificationRepository(NotificationRepositoryInterface, SqlBaseReposito
     async def get_active_subscribers(self) -> list[NotificationSubscriber | None]:
        try:
             query ,params = get_active_subscribers_query()
-            sql_query = SqlQuery(self.session, query)
+            sql_query = SqlQuery(self.session, query, params)
             rows = await sql_query.fetch_all(transformer=notification_subsciber_from_db)
             return rows
        except Exception as e:

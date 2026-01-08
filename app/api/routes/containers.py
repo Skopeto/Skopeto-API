@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/containers", tags=["Containers"])
 
 
-@router.post("/collect/{server_id}")
-async def collect_server_monitoring(
+@router.post("/{server_id}/collect")
+async def collect_container_metrics(
     server_id: int,
     current_user: User = Depends(get_current_user),
     server_repo: ServerRepositoryInterface = Depends(get_server_repository),
@@ -59,8 +59,8 @@ async def collect_server_monitoring(
     }
 
 
-@router.get("/all")
-async def get_all_servers_and_containers(
+@router.get("")
+async def list_containers(
     current_user: User = Depends(get_current_user),
     server_repo: ServerRepositoryInterface = Depends(get_server_repository),
     docker_repo: DockerRepositoryInterface = Depends(get_docker_repository),

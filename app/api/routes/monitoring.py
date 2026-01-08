@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/monitoring", tags=["Monitoring"])
 
 
-@router.post("/collect-all")
-async def collect_all_monitoring(
+@router.post("/collect")
+async def collect_monitoring(
     current_user: User = Depends(get_current_user),
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
     docker_repository: DockerRepositoryInterface = Depends(get_docker_repository),

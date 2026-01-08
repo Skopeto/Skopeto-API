@@ -13,7 +13,8 @@ async def register(
     request: RegisterUserRequest,
     user_repository: UserRepositoryInterface = Depends(get_user_repository)
 ):
-    user = await register_user_use_case(request, user_repository)
+    user_data = await register_user_use_case(request, user_repository)
+    user = user_data.model_dump(exclude={'hashed_password'})
     return {"status": "success", "data": user}
 
 @router.post("/auth/login")

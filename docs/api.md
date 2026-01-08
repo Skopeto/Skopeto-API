@@ -81,7 +81,6 @@ Register a new user account.
     "first_name": "John",
     "last_name": "Doe",
     "email": "john@example.com",
-    "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$...",
     "roles": ["admin"],
     "is_active": true,
     "is_superuser": false
@@ -89,7 +88,7 @@ Register a new user account.
 }
 ```
 
-**Note:** The response includes the `hashed_password` field (Argon2 hash).
+**Note:** The response doesnt include the `hashed_password` field (Argon2 hash).
 
 ---
 
@@ -136,11 +135,11 @@ Authenticate and receive an access token.
 
 ## Server Endpoints
 
-### Register Server
+### Create Server
 
 Register a new server for monitoring.
 
-**Endpoint:** `POST /servers/register`
+**Endpoint:** `POST /servers`
 
 **Authentication:** Required
 
@@ -192,11 +191,11 @@ Register a new server for monitoring.
 
 ---
 
-### Get All Servers
+### List Servers
 
 Retrieve all registered servers.
 
-**Endpoint:** `GET /servers/all-servers`
+**Endpoint:** `GET /servers`
 
 **Authentication:** Required
 
@@ -228,18 +227,18 @@ Retrieve all registered servers.
 
 ---
 
-### Collect Server Monitoring Data
+### Collect Container Metrics
 
 Actively collect real-time health metrics and container data for a specific server.
 
-**Endpoint:** `POST /servers/containers/collect/{server_id}`
+**Endpoint:** `POST /containers/{server_id}/collect`
 
 **Authentication:** Required
 
 **Path Parameters:**
 - `server_id`: Integer ID of the server
 
-**Example:** `POST /servers/containers/collect/1`
+**Example:** `POST /containers/1/collect`
 
 **Response (200 OK):**
 
@@ -295,7 +294,7 @@ Actively collect real-time health metrics and container data for a specific serv
 - This endpoint actively collects fresh metrics from the server via SSH
 - Server health metrics are collected and persisted to the database
 - Container metrics are only collected if the server is healthy
-- Use `GET /servers/containers/all` to retrieve stored data without triggering new collection
+- Use `GET /containers` to retrieve stored data without triggering new collection
 
 **Error Response (404 Not Found):**
 
@@ -309,9 +308,9 @@ Actively collect real-time health metrics and container data for a specific serv
 
 ### Collect All Monitoring Data
 
-Trigger collection of metrics from all registered servers and their containers.
+Trigger collection of complete monitoring data for all servers (health, containers, and databases).
 
-**Endpoint:** `POST /servers/monitoring/collect-all`
+**Endpoint:** `POST /monitoring/collect`
 
 **Authentication:** Required
 
@@ -369,11 +368,11 @@ Trigger collection of metrics from all registered servers and their containers.
 
 ---
 
-### Get All Servers with Containers
+### List All Containers
 
 Retrieve all servers with their current health status and associated containers.
 
-**Endpoint:** `GET /servers/containers/all`
+**Endpoint:** `GET /containers`
 
 **Authentication:** Required
 
@@ -442,20 +441,20 @@ Retrieve all servers with their current health status and associated containers.
 - **Important:** May include containers that have been deleted but not yet removed from the database
 - Containers are identified by `name` (not `container_id`) to handle container restarts correctly
 - When a container is stopped and restarted, Docker assigns a new container_id but keeps the same name
-- Use `POST /servers/monitoring/collect-all` to trigger fresh metrics collection and update the database
+- Use `POST /monitoring/collect` to trigger fresh metrics collection and update the database
 
 ---
 
-### Edit Server
+### Update Server
 
 Update server information with partial updates.
 
-**Endpoint:** `PATCH /servers/edit/{server_id}`
+**Endpoint:** `PATCH /servers/{server_id}`
 
 **Authentication:** Required
 
 **Path Parameters:**
-- `server_id`: Integer ID of the server to edit
+- `server_id`: Integer ID of the server to update
 
 **Request Body:**
 
@@ -511,14 +510,14 @@ All fields are optional - only provide the fields you want to update:
 
 Delete a registered server.
 
-**Endpoint:** `DELETE /servers/delete/{server_id}`
+**Endpoint:** `DELETE /servers/{server_id}`
 
 **Authentication:** Required
 
 **Path Parameters:**
 - `server_id`: Integer ID of the server to delete
 
-**Example:** `DELETE /servers/delete/5`
+**Example:** `DELETE /servers/5`
 
 **Response (200 OK):**
 
@@ -538,23 +537,15 @@ Delete a registered server.
 
 ---
 
-## Container Endpoints
+## Database Endpoints
 
-### Get Container Data
+### Get Database Health
 
-Retrieve Docker container information from a specific server.
+Retrieve all servers with their databases and current health metrics.
 
-**Endpoint:** `POST /containers/get-container-data`
+**Endpoint:** `GET /databases/health`
 
 **Authentication:** Required
-
-**Request Body:**
-
-```json
-{
-  "server_id": 1
-}
-```
 
 **Response (200 OK):**
 
@@ -563,53 +554,176 @@ Retrieve Docker container information from a specific server.
   "status": "success",
   "data": [
     {
-      "id": 1,
-      "server_id": 1,
-      "container_id": "a1b2c3d4e5f6",
-      "name": "servermonitor_api",
-      "image": "python:3.12-slim",
-      "status": "running",
-      "ports": "0.0.0.0:8000->8000/tcp",
-      "exit_code": null,
-      "state_changed_at": "2025-12-26T10:00:00Z",
-      "is_healthy": true,
-      "last_seen_at": "2025-12-26T15:30:00Z",
-      "created_at": "2025-12-25T08:00:00Z",
-      "updated_at": "2025-12-26T15:30:00Z"
-    },
-    {
-      "id": 2,
-      "server_id": 1,
-      "container_id": "f6e5d4c3b2a1",
-      "name": "servermonitor_postgres",
-      "image": "postgres:16-alpine",
-      "status": "running",
-      "ports": "0.0.0.0:5432->5432/tcp",
-      "exit_code": null,
-      "state_changed_at": "2025-12-26T10:00:00Z",
-      "is_healthy": true,
-      "last_seen_at": "2025-12-26T15:30:00Z",
-      "created_at": "2025-12-25T08:00:00Z",
-      "updated_at": "2025-12-26T15:30:00Z"
+      "server": {
+        "id": 1,
+        "user_name": "root",
+        "ip_address": "192.168.1.100",
+        "port": 22,
+        "status": "up"
+      },
+      "current_health": {
+        "id": 42,
+        "server_id": 1,
+        "status": "healthy",
+        "cpu_usage": 45.2,
+        "memory_usage": 62.8,
+        "disk_usage": 78.5,
+        "uptime": "15 days, 3:24:10",
+        "checked_at": "2025-12-26T15:30:00Z"
+      },
+      "databases": [
+        {
+          "database": {
+            "id": 1,
+            "server_id": 1,
+            "database_type": "postgresql",
+            "name": "production_db",
+            "host": "192.168.1.100",
+            "port": 5432,
+            "username": "dbuser"
+          },
+          "health": {
+            "status": "healthy",
+            "connection_count": 15,
+            "response_time_ms": 12.5,
+            "checked_at": "2025-12-26T15:30:00Z"
+          }
+        }
+      ]
     }
   ]
 }
 ```
 
-**Container Status Values:**
-The `status` field can have various values based on Docker container states:
-- `"running"`: Container is currently running
-- `"exited"`: Container has stopped
-- `"paused"`: Container is paused
-- `"restarting"`: Container is restarting
-- `"dead"`: Container is dead
-- `"created"`: Container created but not started
+**Notes:**
+- This endpoint actively collects fresh database health metrics
+- Includes server health information along with database-specific metrics
+- Used for database monitoring dashboard refresh
+
+---
+
+### Create Database
+
+Register a new database for monitoring.
+
+**Endpoint:** `POST /databases`
+
+**Authentication:** Required
+
+**Request Body:**
+
+```json
+{
+  "server_id": 1,
+  "database_type": "postgresql",
+  "name": "production_db",
+  "host": "192.168.1.100",
+  "port": 5432,
+  "username": "dbuser",
+  "password": "dbpassword"
+}
+```
+
+**Field Details:**
+- `server_id`: ID of the server where the database resides
+- `database_type`: One of: `"postgresql"`, `"mysql"`, `"mongodb"`, etc.
+- `name`: Database name
+- `host`: Database host address
+- `port`: Database port
+- `username`: Database username
+- `password`: Database password (will be encrypted)
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "server_id": 1,
+    "database_type": "postgresql",
+    "name": "production_db",
+    "host": "192.168.1.100",
+    "port": 5432,
+    "username": "dbuser"
+  }
+}
+```
+
+**Note:** For security, the password is **not included** in API responses.
+
+---
+
+### Update Database
+
+Update database configuration with partial updates.
+
+**Endpoint:** `PATCH /databases/{database_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `database_id`: Integer ID of the database to update
+
+**Request Body:**
+
+All fields are optional - only provide the fields you want to update:
+
+```json
+{
+  "name": "production_db_v2",
+  "port": 5433,
+  "username": "new_dbuser",
+  "password": "newpassword"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "server_id": 1,
+    "database_type": "postgresql",
+    "name": "production_db_v2",
+    "host": "192.168.1.100",
+    "port": 5433,
+    "username": "new_dbuser"
+  }
+}
+```
+
+---
+
+### Delete Database
+
+Delete a database from monitoring.
+
+**Endpoint:** `DELETE /databases/{database_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `database_id`: Integer ID of the database to delete
+
+**Example:** `DELETE /databases/1`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": "Database 1 deleted successfully"
+}
+```
 
 **Error Response (404 Not Found):**
 
 ```json
 {
-  "error": "Server not found"
+  "error": "Database not found"
 }
 ```
 
@@ -682,10 +796,10 @@ curl -X POST http://localhost:8000/auth/login \
   }'
 ```
 
-**3. Use token to register a server:**
+**3. Use token to create a server:**
 
 ```bash
-curl -X POST http://localhost:8000/servers/register \
+curl -X POST http://localhost:8000/servers \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -d '{
@@ -698,28 +812,31 @@ curl -X POST http://localhost:8000/servers/register \
   }'
 ```
 
-**4. Collect server monitoring data:**
+**4. List all servers:**
 
 ```bash
-curl -X POST http://localhost:8000/servers/containers/collect/1 \
+curl -X GET http://localhost:8000/servers \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**5. Get container data:**
+**5. Collect container metrics for a server:**
 
 ```bash
-curl -X POST http://localhost:8000/containers/get-container-data \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -d '{
-    "server_id": 1
-  }'
+curl -X POST http://localhost:8000/containers/1/collect \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**6. Edit server:**
+**6. List all containers:**
 
 ```bash
-curl -X PATCH http://localhost:8000/servers/edit/1 \
+curl -X GET http://localhost:8000/containers \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**7. Update server:**
+
+```bash
+curl -X PATCH http://localhost:8000/servers/1 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -d '{
@@ -728,24 +845,60 @@ curl -X PATCH http://localhost:8000/servers/edit/1 \
   }'
 ```
 
-**7. Delete server:**
+**8. Delete server:**
 
 ```bash
-curl -X DELETE http://localhost:8000/servers/delete/1 \
+curl -X DELETE http://localhost:8000/servers/1 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**8. Collect all monitoring data:**
+**9. Collect all monitoring data:**
 
 ```bash
-curl -X POST http://localhost:8000/servers/monitoring/collect-all \
+curl -X POST http://localhost:8000/monitoring/collect \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**9. Get all servers with containers:**
+**10. Get database health:**
 
 ```bash
-curl -X GET http://localhost:8000/servers/containers/all \
+curl -X GET http://localhost:8000/databases/health \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**11. Create database:**
+
+```bash
+curl -X POST http://localhost:8000/databases \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "server_id": 1,
+    "database_type": "postgresql",
+    "name": "production_db",
+    "host": "192.168.1.100",
+    "port": 5432,
+    "username": "dbuser",
+    "password": "dbpassword"
+  }'
+```
+
+**12. Update database:**
+
+```bash
+curl -X PATCH http://localhost:8000/databases/1 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "port": 5433,
+    "username": "new_dbuser"
+  }'
+```
+
+**13. Delete database:**
+
+```bash
+curl -X DELETE http://localhost:8000/databases/1 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 

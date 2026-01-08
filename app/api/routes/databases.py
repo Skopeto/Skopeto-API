@@ -61,8 +61,8 @@ class ServerAndDatabaseHealthResponse(BaseModel):
     databases: list[DatabaseWithHealth]
 
 
-@router.get("/collect/all")
-async def get_databases(
+@router.get("/health")
+async def get_databases_health(
     database_metrics: DatabaseMetricsServiceInterface = Depends(
         get_database_metrics_service
     ),
@@ -110,32 +110,35 @@ async def get_databases(
     return {"status": "success", "data": results}
 
 
-@router.post("/register")
-async def register_database(
+@router.post("")
+async def create_database(
     request: RegisterDatabaseRequest,
     database_repo: DatabaseRepositoryInterface = Depends(get_database_repository),
     current_user: User = Depends(get_current_user),
 ):
+    """Register a new database for monitoring."""
     registered_db = await register_database_use_case(request, database_repo)
     return {"status": "success", "data": registered_db}
 
 
-@router.patch("/update/{database_id}")
+@router.patch("/{database_id}")
 async def update_database(
     database_id: int,
     request: UpdateDatabaseRequest,
     database_repo: DatabaseRepositoryInterface = Depends(get_database_repository),
     current_user: User = Depends(get_current_user),
 ):
+    """Update database configuration."""
     database = await edit_database_use_case(database_id, request, database_repo)
     return {"status": "success", "data": database}
 
 
-@router.delete("/delete/{database_id}")
+@router.delete("/{database_id}")
 async def delete_database(
     database_id: int,
     database_repo: DatabaseRepositoryInterface = Depends(get_database_repository),
     current_user: User = Depends(get_current_user),
 ):
+    """Delete a database from monitoring."""
     await delete_database_use_case(database_id, database_repo)
     return {"status": "success", "data": f"Database {database_id} deleted successfully"}

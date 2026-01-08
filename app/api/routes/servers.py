@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/servers", tags=["Servers"])
 
-@router.post("/register", status_code=201)
-async def register_server(
+@router.post("", status_code=201)
+async def create_server(
     request: RegisterServerLocationRequest,
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
     current_user: User = Depends(get_current_user)
@@ -30,18 +30,19 @@ async def register_server(
     return {"status": "success", "data": server}
 
 
-@router.get("/all-servers")
-async def get_servers(
+@router.get("")
+async def list_servers(
     current_user: User = Depends(get_current_user),
     server_repository: ServerRepositoryInterface = Depends(get_server_repository),
 ):
+    """Get all registered servers."""
     servers = await get_servers_use_case(server_repository)
-    
+
     return {"status": "success", "data": servers}
 
 
-@router.patch('/edit/{server_id}')
-async def edit_server(
+@router.patch('/{server_id}')
+async def update_server(
     server_id: int,
     request: UpdateServerRequest,
     current_user: User = Depends(get_current_user),
@@ -56,7 +57,7 @@ async def edit_server(
     return {"status": "success", "data": result}
 
 
-@router.delete('/delete/{server_id}')
+@router.delete('/{server_id}')
 async def delete_server(
     server_id: int,
     current_user: User = Depends(get_current_user),

@@ -145,6 +145,8 @@ CREATE TABLE notification_subscribers (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     user_name VARCHAR(100) NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
     delivery_address_email VARCHAR(255),
     notification_channel VARCHAR(20) NOT NULL,
     slack_webhook_url VARCHAR(500),

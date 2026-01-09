@@ -11,6 +11,8 @@ class NotificationSubscriber(BaseModel):
     id: int | None = None
     user_id: int
     user_name: str
+    first_name: str | None = None
+    last_name: str | None = None
     delivery_address_email: EmailStr | None = None
     notification_channel: NotificationChannel
     slack_webhook_url: str | None = None

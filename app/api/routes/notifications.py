@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
 import logging
-from app.core.Exception import SecurityException
 from app.core.security import get_current_user
 from app.modules.auth.domain.entity.user import User
 from app.modules.notifications.application.request.register_notification_subscriber_request import RegisterNotificationSubscriberRequest
@@ -36,9 +35,6 @@ async def add_notification_subscriber(
     notification_repository: NotificationRepositoryInterface = Depends(get_notification_repository),
     current_user: User = Depends(get_current_user),
 ):
-    if request.user_id != current_user.id:
-        raise SecurityException("Cannot register notification subscriber for another user")
-
     subscriber = await register_notification_subscriber_use_case(
         request,
         notification_repository

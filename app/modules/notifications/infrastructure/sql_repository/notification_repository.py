@@ -44,6 +44,8 @@ def notification_subsciber_from_db(row: dict[str, Any] | None) -> NotificationSu
         'id': row['id'],
         'user_id': row['user_id'],
         'user_name': row['user_name'],
+        'first_name': row['first_name'],
+        'last_name': row['last_name'],
         'delivery_address_email': row['delivery_address_email'],
         'notification_channel': NotificationChannel(row['notification_channel']),
         'slack_webhook_url': row['slack_webhook_url'],

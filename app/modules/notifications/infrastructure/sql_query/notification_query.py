@@ -66,7 +66,7 @@ def delete_notification_query(notification_id: int) -> tuple[str, dict[str, Any]
 
 def get_active_subscribers_query() -> tuple[str, dict[str, Any]]:
     query = """
-        SELECT id, user_id, user_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active
+        SELECT id, user_id, user_name, first_name, last_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active
         FROM notification_subscribers
         WHERE is_active = TRUE
     """
@@ -76,7 +76,7 @@ def get_active_subscribers_query() -> tuple[str, dict[str, Any]]:
 
 def get_subscriber_by_id_query(subscriber_id: int) -> tuple[str, dict[str, Any]]:
     query = """
-        SELECT id, user_id, user_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active
+        SELECT id, user_id, user_name, first_name, last_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active
         FROM notification_subscribers
         WHERE id = :subscriber_id
     """
@@ -88,13 +88,15 @@ def persist_notification_subscriber_query(
     notification_subscriber: NotificationSubscriber,
 ) -> tuple[str, dict[str, Any]]:
     query = """
-                INSERT INTO notification_subscribers (user_id, user_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active)
-                VALUES (:user_id, :user_name, :delivery_address_email, :notification_channel, :slack_webhook_url, :subscribed_at, :is_active)
-                RETURNING id, user_id, user_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active
+                INSERT INTO notification_subscribers (user_id, user_name, first_name, last_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active)
+                VALUES (:user_id, :user_name,:first_name, :last_name, :delivery_address_email, :notification_channel, :slack_webhook_url, :subscribed_at, :is_active)
+                RETURNING id, user_id, user_name,first_name, last_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active
             """
     params = {
         "user_id": notification_subscriber.user_id,
         "user_name": notification_subscriber.user_name,
+        "first_name": notification_subscriber.first_name,
+        "last_name": notification_subscriber.last_name,
         "delivery_address_email": notification_subscriber.delivery_address_email,
         "notification_channel": notification_subscriber.notification_channel.value,
         "slack_webhook_url": notification_subscriber.slack_webhook_url,
@@ -131,7 +133,6 @@ def update_notification_subscriber_query(
     }
     return query, params
 
-
 def delete_notification_subscriber_query(
     subscriber_id: int,
 ) -> tuple[str, dict[str, Any]]:
@@ -144,7 +145,7 @@ def delete_notification_subscriber_query(
 
 def get_subscribers_query() -> tuple[str, dict[str, Any]]:
     query = """
-        SELECT id, user_id, user_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active
+        SELECT id, user_id, user_name, first_name, last_name, delivery_address_email, notification_channel, slack_webhook_url, subscribed_at, is_active
         FROM notification_subscribers
     """
     params = {}

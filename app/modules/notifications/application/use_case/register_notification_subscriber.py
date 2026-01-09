@@ -12,6 +12,8 @@ async def register_notification_subscriber_use_case(
     notification_subscriber = NotificationSubscriber(
         user_id=request.user_id,
         user_name=request.user_name,
+        first_name=request.first_name,
+        last_name=request.last_name,
         delivery_address_email=request.delivery_address_email,
         slack_webhook_url=request.slack_webhook_url,
         notification_channel=NotificationChannel(request.notification_channel),

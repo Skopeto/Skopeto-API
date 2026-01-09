@@ -5,6 +5,8 @@ from pydantic import BaseModel, EmailStr
 class RegisterNotificationSubscriberRequest(BaseModel):
     user_id: int
     user_name: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     delivery_address_email: Optional[EmailStr] = None
     slack_webhook_url: Optional[str] | None = None
     notification_channel: str

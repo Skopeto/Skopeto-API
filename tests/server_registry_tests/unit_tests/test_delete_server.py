@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import AsyncMock
 
 from app.modules.server_registry.application.use_case.delete_server import delete_server_use_case
-from app.modules.server_registry.domain.entity.server import Server
 
 
 @pytest.mark.asyncio

@@ -8,7 +8,7 @@ class NotificationRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_notification_by_id(self, notification_id: int) -> Notification | None:
+    async def get_notification_by_user_id(self, user_id: int) -> list[Notification | None]:
         pass
 
     @abstractmethod

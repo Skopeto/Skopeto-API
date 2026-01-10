@@ -65,11 +65,11 @@ class SqlNotificationRepository(NotificationRepositoryInterface, SqlBaseReposito
             logger.error(f"Error creating notification: {e}")
             raise RepositoryException("Failed to create notification") from e
         
-    async def get_notification_by_id(self, notification_id: int) -> Notification | None:
+    async def get_notification_by_user_id(self, notification_id: int) -> list[Notification | None]:
         try:
             query, params = get_notification_by_id_query(notification_id)
             sql_query = SqlQuery(self.session, query, params)
-            return await sql_query.fetch_one(transformer=notification_from_db)
+            return await sql_query.fetch_all(transformer=notification_from_db)
         except Exception as e:
             logger.error(f"Error fetching notification by id {notification_id}: {e}")
             raise RepositoryException("Failed to fetch notification") from e

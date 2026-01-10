@@ -28,8 +28,7 @@ def create_notification_query(notification: Notification) -> tuple[str, dict[str
     }
     return query, params
 
-
-def get_notification_by_id_query(id: int) -> tuple[str, dict[str, Any]]:
+def get_notification_by_id_query(user_id: int) -> tuple[str, dict[str, Any]]:
     query = """
         SELECT
             id,
@@ -39,11 +38,10 @@ def get_notification_by_id_query(id: int) -> tuple[str, dict[str, Any]]:
             created_at,
             is_read
         FROM notifications
-        WHERE id = :notification_id
+        WHERE user_id = :user_id
     """
-    params = {"id": id}
+    params = {"user_id": user_id}
     return query, params
-
 
 def mark_notification_as_read_query(notification_id: int) -> tuple[str, dict[str, Any]]:
     query = """

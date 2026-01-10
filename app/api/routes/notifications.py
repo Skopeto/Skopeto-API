@@ -6,6 +6,7 @@ from app.modules.notifications.application.request.register_notification_subscri
 from app.modules.notifications.application.request.update_notification_dubscriber_request import UpdateNotificationSubscriberRequest
 from app.modules.notifications.application.use_case.delete_notification import delete_notification_use_case
 from app.modules.notifications.application.use_case.delete_notification_subscriber import delete_notification_subscriber_use_case
+from app.modules.notifications.application.use_case.get_subscriber_notifications import get_subscriber_notifications_use_case
 from app.modules.notifications.application.use_case.get_subscribers import get_subscribers_use_case
 from app.modules.notifications.application.use_case.mark_notification_as_read import mark_notification_as_read_use_case
 from app.modules.notifications.application.use_case.register_notification_subscriber import register_notification_subscriber_use_case
@@ -86,4 +87,17 @@ async def mark_notification_as_read(
     await mark_notification_as_read_use_case(notification_id, notification_repository)
     return {"status": "success", "message": f"Notification {notification_id} marked as read."}
 
+
+@router.get("/user/{user_id}")
+async def get_subscriber_notifications(
+    user_id : int,
+    notification_repository: NotificationRepositoryInterface = Depends(get_notification_repository),
+    current_user: User = Depends(get_current_user), 
+):
+    subscriber_notifications = await get_subscriber_notifications_use_case(
+        user_id,
+        notification_repository
+    )
+
+    return {"status": "success", "data": subscriber_notifications}
 

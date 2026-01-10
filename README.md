@@ -92,6 +92,10 @@ docker compose down -v
 docker compose up -d
 docker exec -i servermonitor_postgres psql -U servermonitor -d servermonitor < sql/schema.sql
 ```
+## Tests
+```bash
+uv run python -m pytest tests/
+```
 
 ## Documentation
 - [API Documentation](docs/api.md)

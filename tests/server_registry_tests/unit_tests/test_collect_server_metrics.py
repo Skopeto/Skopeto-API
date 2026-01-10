@@ -23,7 +23,7 @@ async def test_collect_server_metrics_success_healthy(
         'memory_usage': 62.8,
         'disk_usage': 78.5,
         'uptime': '15 days, 3:24:10',
-        'status': 'up'
+        'status': 'healthy'
     }
     mock_server_metrics_service.get_server_metrics.return_value = metrics_data
 
@@ -179,7 +179,7 @@ async def test_collect_server_metrics_updates_existing_health(
         'memory_usage': 70.0,
         'disk_usage': 80.0,
         'uptime': '20 days',
-        'status': 'up'
+        'status': 'healthy'
     }
     mock_server_metrics_service.get_server_metrics.return_value = metrics_data
 

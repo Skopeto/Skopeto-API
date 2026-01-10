@@ -1,34 +1,107 @@
 # Skopeto
-
 ## Server Monitoring Tool
+🚀 **Open-Source Server & Container Monitoring (Built with FastAPI)**
 
-Open-source server and container monitoring with SSH health checks.
+Skopeto was built to answer a simple question:
 
-Built with FastAPI!
+**“What’s actually happening on my servers, containers, and databases — without me having to manually SSH into each server — and how do I know when something breaks?”**
 
-This project was born out of necessity having to monitor multiple containers in different servers  
-and having to sometimes debug the server resources themselves  
-its my plan to also add database health check analysis, container management  
-and different methods of monitoring not just SSH
+It came from real-world pain.
+Managing multiple servers, running containers across environments, and debugging resource issues often meant constantly logging into machines just to understand what was going on.
 
-Front-End is Vue, however, with me not being a front end developer,  
-it's there to just serve only one purpose and that is to provide an interface for our API  
-you will find the UI in https://github.com/Skopeto/Skopeto-UI.git (dont judge me pls)
+Skopeto aims to centralize that visibility into a single, **lightweight, self-hosted platform** — giving developers clear insights, automated health checks, and alerts **without agents, unnecessary complexity, or heavy overhead**.
 
-Other technologies that I make use of, some critical and some not so much are Docker, SSH, uv package manager,  
-and of course the nice, lightweight image of Postgres.
+---
 
-![GitHub stars](https://img.shields.io/github/stars/Skopeto/Skopeto-API)
-![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
+### 🧭 How Skopeto Works (From a User’s Perspective)
 
-## Features
+### 1️⃣ Register a Server
 
-- 🖥️ SSH-based server monitoring (CPU, RAM, Disk)
-- 🐳 Container health checks (ssh shell commands "docker ps -a")
-- 📊 Real-time dashboards
-- 🔔 Alert notifications - coming soon
-- 🔐 Multi-user authentication (JWT)
-- 🗄️ Supports PostgreSQL, MySQL, Oracle / i will provide schema dumps for them however repository implementations and dbConn are up to you.
+Users add their server via SSH. Once registered, Skopeto collects key system metrics through a scheduler or manual refresh, including:
+
+* 🧠 CPU usage
+* 💾 Memory usage
+* 🗄️ Disk usage
+* ⏳ Server uptime
+* ✅ Overall health status
+
+---
+
+### 2️⃣ Monitor Containers
+
+For each server, Skopeto detects and tracks running Docker containers:
+
+* Container status (running / stopped / exited)
+* Health state
+* Image & exposed ports
+* Exit codes
+* Last seen & state change timestamps
+
+This makes it easy to spot unhealthy or repeatedly restarting containers before they become incidents.
+
+---
+
+### 3️⃣ Register Databases
+
+Users can attach databases to a server using connection credentials and monitor:
+
+* Connection health
+* Active connection count
+* Query / response time
+* Overall database status
+
+These are currently **basic checks**, with the goal of evolving this much further over time.
+
+---
+
+### 4️⃣ Subscribe to Notifications
+
+Once resources are registered, users can add notification subscribers:
+
+* 📬 Email
+* 💬 Slack via webhooks (still being tested)
+* 🔔 In-app notifications (per logged-in user)
+
+When the scheduler runs and detects issues, alerts are sent automatically.
+Slack and email alerts go to **all subscribers**, while in-app alerts are user-specific.
+
+---
+
+### 5️⃣ Automated Monitoring via Scheduler
+
+Skopeto runs a scheduler every **30 minutes** to perform health checks across all registered resources.
+
+This is intended as a **fire-and-forget** feature.
+For real-time insights, users can manually refresh data in the app.
+
+Skopeto is designed to be **lightweight and agentless** — no software is installed on the monitored servers. Whether this fits your needs depends on your specific use case.
+
+---
+
+### ➡️ What’s Next
+
+* Configurable scheduler intervals
+* More advanced database health checks
+* Basic container management (restart / stop / start)
+* Remote command execution per server
+
+---
+
+### ⚙️ Tech Stack
+
+* **Backend:** FastAPI
+* **Frontend:** Vue (API-first UI, purely to serve the API 😄)
+* **Infrastructure:** Docker, SSH
+* **Database:** PostgreSQL (lightweight image — more support planned)
+* **Authentication:** JWT
+
+---
+
+Skopeto is still in its infancy and actively evolving, but the goal is clear:
+
+**A simple, extensible, self-hosted monitoring platform — built by a developer, for developers.**
+
+⭐ If this resonates, feel free to check it out, try it, or star the repo. Feedback is more than welcome.
 
 ## Quick Start (Self-Hosted)
 
@@ -72,7 +145,6 @@ docker exec -i servermonitor_postgres psql -U servermonitor -d servermonitor < s
 5. **Verify installation**
 - API: http://localhost:8000
 - API Docs: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
 
 ### Managing the Application
 
@@ -119,3 +191,5 @@ AGPL-3.0 - see [LICENSE](LICENSE)
 Built by [Fatjon Lleshi] (https://www.linkedin.com/in/giannis-l-117b08196/)
 
 ⭐ Star us on GitHub if you find this useful!
+
+

@@ -60,7 +60,6 @@ class ServerAndDatabaseHealthResponse(BaseModel):
     current_health: ServerHealth
     databases: list[DatabaseWithHealth]
 
-
 @router.get("/health")
 async def get_databases_health(
     database_metrics: DatabaseMetricsServiceInterface = Depends(
@@ -109,6 +108,51 @@ async def get_databases_health(
 
     return {"status": "success", "data": results}
 
+@router.get("/health/{server_id}")
+async def get_database_health(
+    server_id: int,
+    database_metrics: DatabaseMetricsServiceInterface = Depends(
+        get_database_metrics_service
+    ),
+    connector: DatabaseConnector = Depends(get_database_connector),
+    database_repo: DatabaseRepositoryInterface = Depends(get_database_repository),
+    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
+    server_metrics: ServerMetricsServiceInterface = Depends(get_server_metrics_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Collects database health for all servers and their databases.
+    Used for: Database tab refresh
+    """
+    results = []
+    server = await server_repo.get_server(server_id)
+    if server is None or server.id is None:
+        return {"status": "error", "data": results}
+    # Get server health (server module)
+    server_health = await collect_server_metrics_use_case(
+        server.id,
+        server_repo,
+        server_metrics
+    )
+
+    # Get databases with health (database module - pass only server_id)
+    databases = await collect_databases_for_server_use_case(
+        server.id,
+        database_repo,
+        database_metrics,
+        connector,
+    )
+
+    # Combine results (orchestration)
+    results.append(
+        ServerAndDatabaseHealthResponse(
+            server=server,
+            current_health=server_health,
+            databases=databases,
+        )
+    )
+
+    return {"status": "success", "data": results}
 
 @router.post("")
 async def create_database(

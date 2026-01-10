@@ -695,6 +695,80 @@ Retrieve all servers with their databases and current health metrics.
 
 ---
 
+### Get Database Health for Specific Server
+
+Retrieve database health metrics for a specific server.
+
+**Endpoint:** `GET /databases/health/{server_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `server_id`: Integer ID of the server
+
+**Example:** `GET /databases/health/1`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "server": {
+        "id": 1,
+        "user_name": "root",
+        "ip_address": "192.168.1.100",
+        "port": 22,
+        "status": "up"
+      },
+      "current_health": {
+        "id": 42,
+        "server_id": 1,
+        "status": "healthy",
+        "cpu_usage": 45.2,
+        "memory_usage": 62.8,
+        "disk_usage": 78.5,
+        "uptime": "15 days, 3:24:10",
+        "checked_at": "2025-12-26T15:30:00Z"
+      },
+      "databases": [
+        {
+          "database": {
+            "id": 1,
+            "server_id": 1,
+            "database_type": "postgresql",
+            "name": "production_db",
+            "host": "192.168.1.100",
+            "port": 5432,
+            "username": "dbuser"
+          },
+          "health": {
+            "status": "healthy",
+            "connection_count": 15,
+            "response_time_ms": 12.5,
+            "checked_at": "2025-12-26T15:30:00Z"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Error Response (404 Not Found):**
+
+```json
+{
+  "status": "error",
+  "data": []
+}
+```
+
+**Notes:**
+- This endpoint actively collects fresh database health metrics for a specific server
+---
+
 ### Create Database
 
 Register a new database for monitoring.
@@ -838,6 +912,8 @@ Register a user to receive notifications through a specific channel.
 {
   "user_id": 1,
   "user_name": "johndoe",
+  "first_name": "John",
+  "last_name": "Doe",
   "delivery_address_email": "john@example.com",
   "notification_channel": "email",
   "slack_webhook_url": null
@@ -847,6 +923,8 @@ Register a user to receive notifications through a specific channel.
 **Field Details:**
 - `user_id`: ID of the user (must match authenticated user)
 - `user_name`: Username for reference
+- `first_name`: User's first name (optional)
+- `last_name`: User's last name (optional)
 - `delivery_address_email`: Email address for email notifications (optional, required for email channel)
 - `notification_channel`: One of: `"email"`, `"slack"`, `"sms"`
 - `slack_webhook_url`: Slack webhook URL (optional, required for slack channel)
@@ -860,6 +938,8 @@ Register a user to receive notifications through a specific channel.
     "id": 1,
     "user_id": 1,
     "user_name": "johndoe",
+    "first_name": "John",
+    "last_name": "Doe",
     "delivery_address_email": "john@example.com",
     "notification_channel": "email",
     "slack_webhook_url": null,
@@ -901,6 +981,8 @@ Retrieve all notification subscribers.
       "id": 1,
       "user_id": 1,
       "user_name": "johndoe",
+      "first_name": "John",
+      "last_name": "Doe",
       "delivery_address_email": "john@example.com",
       "notification_channel": "email",
       "slack_webhook_url": null,
@@ -911,6 +993,8 @@ Retrieve all notification subscribers.
       "id": 2,
       "user_id": 1,
       "user_name": "johndoe",
+      "first_name": "John",
+      "last_name": "Doe",
       "delivery_address_email": null,
       "notification_channel": "slack",
       "slack_webhook_url": "https://hooks.slack.com/services/...",
@@ -945,6 +1029,8 @@ All fields are optional - only provide the fields you want to update:
 ```json
 {
   "user_name": "johndoe_updated",
+  "first_name": "Jonathan",
+  "last_name": "Smith",
   "delivery_address_email": "newemail@example.com",
   "slack_webhook_url": "https://hooks.slack.com/services/new...",
   "notification_channel": "slack",
@@ -954,6 +1040,8 @@ All fields are optional - only provide the fields you want to update:
 
 **Field Details:**
 - `user_name`: Updated username (optional)
+- `first_name`: Updated first name (optional)
+- `last_name`: Updated last name (optional)
 - `delivery_address_email`: Updated email address (optional)
 - `slack_webhook_url`: Updated Slack webhook URL (optional)
 - `notification_channel`: Change notification channel (optional)
@@ -968,6 +1056,8 @@ All fields are optional - only provide the fields you want to update:
     "id": 1,
     "user_id": 1,
     "user_name": "johndoe_updated",
+    "first_name": "Jonathan",
+    "last_name": "Smith",
     "delivery_address_email": "newemail@example.com",
     "notification_channel": "email",
     "slack_webhook_url": null,
@@ -1210,7 +1300,14 @@ curl -X GET http://localhost:8000/databases/health \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-**13. Create database:**
+**13. Get database health for specific server:**
+
+```bash
+curl -X GET http://localhost:8000/databases/health/1 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**14. Create database:**
 
 ```bash
 curl -X POST http://localhost:8000/databases \
@@ -1255,6 +1352,8 @@ curl -X POST http://localhost:8000/notifications/subscriber \
   -d '{
     "user_id": 1,
     "user_name": "johndoe",
+    "first_name": "John",
+    "last_name": "Doe",
     "delivery_address_email": "john@example.com",
     "notification_channel": "email",
     "slack_webhook_url": null

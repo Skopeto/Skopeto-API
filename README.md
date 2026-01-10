@@ -31,14 +31,67 @@ and of course the nice, lightweight image of Postgres.
 - 🗄️ Supports PostgreSQL, MySQL, Oracle / i will provide schema dumps for them however repository implementations and dbConn are up to you.
 
 ## Quick Start (Self-Hosted)
+
+### Prerequisites
+- Docker and Docker Compose installed
+- Git
+
+### Installation Steps
+
+1. **Clone the repository**
 ```bash
 git clone https://github.com/Skopeto/Skopeto-API.git
 cd Skopeto-API
+```
+
+2. **Set up environment variables**
+```bash
 cp .env.example .env
+```
+
+Edit `.env` and configure:
+```
+DB_USER=servermonitor
+DB_PASSWORD=your-secure-password
+DB_NAME=servermonitor
+DB_HOST=postgres-db
+DB_PORT=5432
+SECRET_KEY=your-secret-key-here
+```
+
+3. **Start the application**
+```bash
 docker compose up -d
 ```
-Dont forget to assign vlaues to .env
-Visit `http://localhost:8000`
+
+4. **Initialize database schema**
+```bash
+docker exec -i servermonitor_postgres psql -U servermonitor -d servermonitor < sql/schema.sql
+```
+
+5. **Verify installation**
+- API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+
+### Managing the Application
+
+**View logs**
+```bash
+docker compose logs -f
+```
+
+**Stop the application**
+```bash
+docker compose down
+```
+
+**Reset database**
+```bash
+docker compose down -v
+docker compose up -d
+docker exec -i servermonitor_postgres psql -U servermonitor -d servermonitor < sql/schema.sql
+```
 
 ## Documentation
 - [API Documentation](docs/api.md)

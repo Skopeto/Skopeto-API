@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import paramiko
+from typing import Optional
 import logging
 from app.core.Exception import SSHConnectionException, SecurityException
 from app.modules.server_registry.domain.entity.server import Server
@@ -19,10 +20,16 @@ class SSHClientInterface(ABC):
     @abstractmethod
     def disconnect(self) -> None:
         pass
+    
+    @abstractmethod
+    def get_shell_channel(self) -> paramiko.Channel:
+        pass
 
 class SSHClient(SSHClientInterface):
     def __init__(self):
-        self.client = None
+        self.client: Optional[paramiko.SSHClient] = None
+        self.channel: Optional[paramiko.Channel] = None
+    
     def connect(self, server: Server) -> None:
         try:
             decrypted_password = decrypt_password(server.ssh_password_encrypted)
@@ -36,14 +43,19 @@ class SSHClient(SSHClientInterface):
                 password=decrypted_password,
                 timeout=10
             )
+            logger.info(f"Successfully connected to {server.ip_address}")
+            
         except paramiko.AuthenticationException as e:
             logger.error(f"SSH authentication failed for {server.ip_address}: {str(e)}", exc_info=True)
+            self.disconnect()
             raise SecurityException("Authentication failed")
         except paramiko.SSHException as e:
             logger.error(f"SSH error connecting to {server.ip_address}: {str(e)}", exc_info=True)
+            self.disconnect()
             raise SSHConnectionException("Failed to connect to server")
         except Exception as e:
             logger.error(f"Unexpected error connecting to {server.ip_address}: {str(e)}", exc_info=True)
+            self.disconnect()
             raise SSHConnectionException("Connection failed")
     
     def execute_command(self, command: str) -> str:
@@ -57,14 +69,53 @@ class SSHClient(SSHClientInterface):
             
             if error:
                 logger.warning(f"Command stderr output: {error}")
-                raise SSHConnectionException("Command execution failed")
             
             return output
+            
         except Exception as e:
             logger.error(f"Error executing command '{command}': {str(e)}", exc_info=True)
             raise SSHConnectionException("Command execution failed")
     
+    def get_shell_channel(self) -> paramiko.Channel:
+        if not self.client:
+            logger.error("Attempted to get shell channel without active client connection")
+            raise SSHConnectionException("Not connected to server")
+        
+        try:
+            self.channel = self.client.invoke_shell(
+                term='xterm',
+                width=80,
+                height=24
+            )
+            
+            if self.channel is None:
+                logger.error("invoke_shell returned None")
+                raise SSHConnectionException("Failed to create shell channel")
+            
+            self.channel.settimeout(0.0)
+            logger.info("Shell channel created and configured successfully")
+            return self.channel
+            
+        except Exception as e:
+            logger.error(f"Failed to create shell channel: {str(e)}", exc_info=True)
+            self.channel = None
+            raise SSHConnectionException(f"Failed to create shell channel: {str(e)}")
+    
     def disconnect(self) -> None:
+        if self.channel:
+            try:
+                self.channel.close()
+                logger.debug("Shell channel closed")
+            except Exception as e:
+                logger.warning(f"Error closing channel: {e}")
+            finally:
+                self.channel = None
+        
         if self.client:
-            self.client.close()
-            self.client = None
+            try:
+                self.client.close()
+                logger.debug("SSH client disconnected")
+            except Exception as e:
+                logger.warning(f"Error closing SSH client: {e}")
+            finally:
+                self.client = None

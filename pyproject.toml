@@ -25,6 +25,7 @@ dependencies = [
     "python-jose>=3.5.0",
     "sqlalchemy>=2.0.45",
     "uvicorn>=0.38.0",
+    "websockets>=16.0",
 ]
 
 [tool.pytest.ini_options]

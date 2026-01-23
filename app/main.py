@@ -3,7 +3,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.api.routes import auth, notifications, servers, containers, databases, monitoring, users
+from app.api.routes import auth, notifications, servers, containers, databases, monitoring, shell, users
 from app.core.Exception import AppBaseException
 from app.core.scheduler import start_scheduler, stop_scheduler
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,6 +53,7 @@ app.include_router(databases.router)
 app.include_router(monitoring.router)
 app.include_router(users.router)
 app.include_router(notifications.router)
+app.include_router(shell.router)
 
 @app.get("/")
 def root():

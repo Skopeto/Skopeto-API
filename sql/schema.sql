@@ -158,6 +158,13 @@ CREATE TABLE notification_subscribers (
     CONSTRAINT uq_notification_subscribers UNIQUE (user_id, notification_channel)
 );
 
+-- timer scheduler table 
+CREATE TABLE Scheduler_Timer (
+    id SERIAL PRIMARY KEY,
+    interval_minutes INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ============================================
 -- INDEXES
 -- ============================================

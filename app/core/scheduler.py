@@ -3,6 +3,7 @@ import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from app.core.db_session import SessionManager
+from app.modules.schedule_timer.infrastructure.sql_repository.scheduler_timer_repository import SQLSchedulerTimerRepository
 from app.modules.server_registry.infrastructure.sql_repository.server_repository import SqlServerRepository
 from app.modules.docker_registry.infrastructure.sql_repository.docker_repository import SqlDockerRepository
 from app.modules.notifications.infrastructure.sql_repository.notification_repository import SqlNotificationRepository
@@ -65,7 +66,6 @@ async def scheduled_monitoring_task():
                     docker_metrics
                 )
 
-                # to be absatracted to a service later
                 alerts = []
 
                 for container in containers:
@@ -98,19 +98,44 @@ async def scheduled_monitoring_task():
     success_count = len([r for r in results if r is not None])
     logger.info(f"Monitoring collection completed. Processed {success_count}/{len(servers)} servers successfully")
 
-def start_scheduler():
+async def get_timer_interval() -> int:
+    try:
+        async with SessionManager.session_scope() as session:
+            repo = SQLSchedulerTimerRepository(session)
+            timer = await repo.get_timer()
+            
+            if timer:
+                return timer.interval_minutes
+            
+            logger.warning("No timer found, using default 5 minutes")
+            return 5
+    except Exception as e:
+        logger.error(f"Error getting timer, using default 5 minutes: {e}")
+        return 5
+
+async def start_scheduler():
+    interval = await get_timer_interval()
+    
     scheduler.add_job(
         scheduled_monitoring_task,
-        trigger=IntervalTrigger(minutes=100),
+        trigger=IntervalTrigger(minutes=interval),
         id='monitoring_collection',
         name='Collect server and container monitoring data',
         replace_existing=True
     )
     
     scheduler.start()
-    logger.info("Scheduler started - monitoring collection will run every {minutes} minute/s")
+    logger.info(f"Scheduler started - monitoring collection will run every {interval} minute(s)")
+
 
 def stop_scheduler():
     if scheduler.running:
         scheduler.shutdown()
         logger.info("Scheduler stopped")
+
+async def update_scheduler_interval(new_interval: int):
+    scheduler.reschedule_job(
+        'monitoring_collection',
+        trigger=IntervalTrigger(minutes=new_interval)
+    )
+    logger.info(f"Scheduler updated to run every {new_interval} minute(s)")

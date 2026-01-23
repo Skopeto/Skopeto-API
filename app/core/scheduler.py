@@ -3,6 +3,8 @@ import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from app.core.db_session import SessionManager
+from app.modules.auth.infrastructure.sql_repository.user_repository import SqlUserRepository
+from app.modules.notifications.application.use_case.create_notification_and_notify_subscriber import create_notification_for_all_users
 from app.modules.schedule_timer.infrastructure.sql_repository.scheduler_timer_repository import SQLSchedulerTimerRepository
 from app.modules.server_registry.infrastructure.sql_repository.server_repository import SqlServerRepository
 from app.modules.docker_registry.infrastructure.sql_repository.docker_repository import SqlDockerRepository
@@ -12,7 +14,6 @@ from app.modules.server_registry.application.service.server_metrics_service impo
 from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
 from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
 from app.modules.docker_registry.application.use_case.collect_container_metrics import collect_container_metrics_use_case
-from app.modules.notifications.application.use_case.create_notification_and_notify_subscriber import create_notification_and_notify_subscriber
 from app.modules.server_registry.domain.entity.server import Server
 from app.core.dependencies import get_ssh_client
 from app.core.config import settings
@@ -49,7 +50,8 @@ async def scheduled_monitoring_task():
         async with SessionManager.session_scope() as session:
             server_repo = SqlServerRepository(session)
             docker_repo = SqlDockerRepository(session)
-            notification_repository = SqlNotificationRepository(session)
+            notification_repo = SqlNotificationRepository(session)
+            user_repo = SqlUserRepository(session)
 
             try:
                 server_health = await collect_server_metrics_use_case(
@@ -77,10 +79,11 @@ async def scheduled_monitoring_task():
 
                 if alerts:
                     message = "\n".join(alerts)
-                    await create_notification_and_notify_subscriber(
+                    await create_notification_for_all_users(
                         message=message,
                         title="Skopeto Monitoring Alerts",
-                        notification_repository=notification_repository,
+                        user_repository=user_repo,
+                        notification_repository=notification_repo,
                         notification_service=notification_service
                     )
 

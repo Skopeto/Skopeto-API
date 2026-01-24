@@ -15,7 +15,7 @@ security = HTTPBearer()
 def get_user_repository(session: SessionDep) -> UserRepositoryInterface:
     return SqlUserRepository(session)
 
-async def get_current_user(  # Make it async
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     user_repo: UserRepositoryInterface = Depends(get_user_repository)
 ) -> User:
@@ -31,7 +31,7 @@ async def get_current_user(  # Make it async
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    user = await user_repo.get_user(user_id)  # Add await
+    user = await user_repo.get_user(user_id)
     
     if not user:
         raise HTTPException(status_code=401, detail="User not found")

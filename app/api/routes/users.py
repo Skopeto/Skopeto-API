@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from app.core.Exception import ApplicationException, AuthorizationException
+from app.core.Exception import ApplicationException
 from app.core.security import get_current_user, get_user_repository
 from app.modules.auth.application.request.update_user_request import UpdateUserRequest
 from app.modules.auth.application.use_case.get_user import get_user_use_case
@@ -9,6 +9,7 @@ from app.modules.auth.application.use_case.get_users import get_users_use_case
 from app.modules.auth.application.use_case.update_user import update_user_use_case
 from app.modules.auth.domain.entity.user import Roles
 from app.modules.auth.domain.repository.user_repository import UserRepositoryInterface
+from app.services.check_user_superadmin import check_if_user_superadmin
 
 logger = logging.getLogger(__name__)
 
@@ -62,12 +63,10 @@ async def update_user(
         raise ApplicationException("User not found")
 
     if current_user.id != user.id:
-        if current_user.role != Roles.SUPERADMIN:
-            raise AuthorizationException("Cannot edit another user")
+        await check_if_user_superadmin(current_user)
 
     if request.roles is not None:
-        if current_user.role != Roles.SUPERADMIN:
-            raise AuthorizationException("Only superadmin can change role")
+        await check_if_user_superadmin(current_user)
 
     updated_user = await update_user_use_case(user_id, request, user_repository)
 
@@ -81,10 +80,11 @@ async def manage_user(
     current_user = Depends(get_current_user),
     user_repository: UserRepositoryInterface = Depends(get_user_repository),
 ):
-    # Permission check
-    if Roles.SUPERADMIN not in current_user.roles:
-        raise AuthorizationException("superadmin access required")
+    await check_if_user_superadmin(current_user)
+
     user = await update_user_use_case(user_id, request, user_repository)
     if not user:
         raise ApplicationException("Users not found")
     return {"status": "success", "data": user}
+
+

@@ -630,6 +630,180 @@ Delete a registered server.
 
 ---
 
+### Interactive Shell (WebSocket)
+
+Establish a WebSocket connection for an interactive shell session with a server.
+
+**Endpoint:** `WebSocket /ws/shell/{server_id}`
+
+**Authentication:** Not required (connection-level)
+
+**Path Parameters:**
+- `server_id`: Integer ID of the server to connect to
+
+**Example:** `ws://localhost:8000/ws/shell/1`
+
+**Connection Flow:**
+
+1. Client establishes WebSocket connection
+2. Server validates the server exists
+3. If server not found, returns error and closes connection
+4. If valid, interactive shell session begins
+
+**Client Messages:**
+
+Send commands as plain text or JSON:
+
+```json
+{
+  "type": "command",
+  "data": "ls -la"
+}
+```
+
+**Server Messages:**
+
+```json
+{
+  "type": "output",
+  "data": "total 64\ndrwxr-xr-x  5 root root 4096 Jan 24 10:00 .\n..."
+}
+```
+
+**Error Response (Server Not Found):**
+
+```json
+{
+  "type": "error",
+  "data": "Server 1 not found"
+}
+```
+
+**Notes:**
+- The WebSocket connection provides real-time bidirectional communication
+- Commands are executed via SSH on the target server
+- The connection remains open until explicitly closed by client or server
+- Use for interactive debugging, administration, or running ad-hoc commands
+
+**JavaScript Example:**
+
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws/shell/1');
+
+ws.onopen = () => {
+  console.log('Connected to shell');
+  ws.send(JSON.stringify({ type: 'command', data: 'whoami' }));
+};
+
+ws.onmessage = (event) => {
+  const response = JSON.parse(event.data);
+  console.log('Output:', response.data);
+};
+
+ws.onclose = () => {
+  console.log('Shell session closed');
+};
+```
+
+---
+
+## Scheduler Endpoints
+
+### Get Scheduler Timer
+
+Retrieve the current scheduler interval configuration.
+
+**Endpoint:** `GET /scheduler/timer`
+
+**Authentication:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "interval_minutes": 5
+}
+```
+
+**Error Response (404 Not Found):**
+
+```json
+{
+  "detail": "Timer not found. Schedule a new timer."
+}
+```
+
+**Error Response (500 Internal Server Error):**
+
+```json
+{
+  "detail": "Failed to retrieve timer"
+}
+```
+
+**Notes:**
+- The scheduler timer controls how frequently automated monitoring tasks run
+- Default interval is typically set during initial setup
+
+---
+
+### Update Scheduler Timer
+
+Update the scheduler interval for automated monitoring.
+
+**Endpoint:** `PUT /scheduler/timer`
+
+**Authentication:** Required
+
+**Request Body:**
+
+```json
+{
+  "interval_minutes": 10
+}
+```
+
+**Field Validations:**
+- `interval_minutes`: Integer between 1 and 1440 (1 minute to 24 hours)
+
+**Response (200 OK):**
+
+```json
+{
+  "interval_minutes": 10,
+  "message": "Timer updated to 10 minutes"
+}
+```
+
+**Error Response (422 Unprocessable Entity):**
+
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "interval_minutes"],
+      "msg": "ensure this value is greater than or equal to 1",
+      "type": "value_error.number.not_ge"
+    }
+  ]
+}
+```
+
+**Error Response (500 Internal Server Error):**
+
+```json
+{
+  "detail": "Failed to update timer"
+}
+```
+
+**Notes:**
+- Changes take effect immediately for the next scheduled run
+- Setting a lower interval increases monitoring frequency but may increase server load
+- Maximum interval of 1440 minutes (24 hours) prevents excessively long gaps between checks
+
+---
+
 ## Database Endpoints
 
 ### Get Database Health
@@ -1008,6 +1182,57 @@ Retrieve all notification subscribers.
 **Notes:**
 - Returns all subscribers across all users
 - Includes both active and inactive subscriptions
+
+---
+
+### Get User Notifications
+
+Retrieve all notifications for a specific user. Subscribers also receive their delivery email address in the response.
+
+**Endpoint:** `GET /notifications/user/{user_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `user_id`: Integer ID of the user
+
+**Example:** `GET /notifications/user/1`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "title": "Server Alert",
+      "message": "Server 192.168.1.100 is experiencing high CPU usage",
+      "notification_type": "warning",
+      "is_read": false,
+      "created_at": "2026-01-24T10:30:00Z",
+      "delivery_email": "john@example.com"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "title": "Container Stopped",
+      "message": "Container 'nginx-proxy' on server 192.168.1.100 has stopped",
+      "notification_type": "error",
+      "is_read": true,
+      "created_at": "2026-01-24T09:15:00Z",
+      "delivery_email": "john@example.com"
+    }
+  ]
+}
+```
+
+**Notes:**
+- Returns all notifications for the specified user (both read and unread)
+- Notifications are created for all users but alerts (email/Slack) are only sent to subscribers
+- The `delivery_email` field is included for subscribers to show where alerts are sent
+- Use `POST /notifications/markAsRead/{notification_id}` to mark notifications as read
 
 ---
 
@@ -1397,6 +1622,41 @@ curl -X POST http://localhost:8000/notifications/markAsRead/5 \
 ```bash
 curl -X DELETE http://localhost:8000/notifications/3 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**22. Get user notifications:**
+
+```bash
+curl -X GET http://localhost:8000/notifications/user/1 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**23. Get scheduler timer:**
+
+```bash
+curl -X GET http://localhost:8000/scheduler/timer \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+**24. Update scheduler timer:**
+
+```bash
+curl -X PUT http://localhost:8000/scheduler/timer \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "interval_minutes": 10
+  }'
+```
+
+**25. Connect to interactive shell (WebSocket):**
+
+```bash
+# Using websocat (install with: cargo install websocat)
+websocat ws://localhost:8000/ws/shell/1
+
+# Or using wscat (install with: npm install -g wscat)
+wscat -c ws://localhost:8000/ws/shell/1
 ```
 
 ---

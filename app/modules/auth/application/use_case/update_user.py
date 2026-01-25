@@ -1,6 +1,8 @@
 from argon2 import PasswordHasher
 from app.core.Exception import ApplicationException, SecurityException
 from app.modules.auth.application.request.update_user_request import UpdateUserRequest
+from app.modules.auth.application.service.check_user_email import email_exists
+from app.modules.auth.application.service.check_user_username import username_exists
 from app.modules.auth.domain.entity.user import User
 from app.modules.auth.domain.repository.user_repository import UserRepositoryInterface
 from argon2.exceptions import VerifyMismatchError
@@ -12,15 +14,11 @@ async def update_user_use_case(user_id: int, request: UpdateUserRequest, user_re
     if not existing_user:
         raise ApplicationException("User not found")
 
-    if request.user_name:
-        other_user = await user_repo.get_by_username(request.user_name)
-        if other_user and other_user.id != user_id:
-            raise ApplicationException("Username already exists")
-
     if request.email:
-        other_user = await user_repo.get_by_email(request.email)
-        if other_user and other_user.id != user_id:
-            raise ApplicationException("Email already exists")
+        await email_exists(email=request.email, user_repository=user_repo, exclude_user_id=user_id)
+
+    if request.user_name:
+        await username_exists(username=request.user_name, user_repository=user_repo, exclude_user_id=user_id)
 
     if request.current_password:
         try:

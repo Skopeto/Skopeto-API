@@ -2,10 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 import logging
 
+from app.core.security import get_current_user
+from app.modules.auth.domain.entity.user import User
 from app.modules.schedule_timer.application.use_cases.get_timer import get_scheduler_timer_use_case
 from app.modules.schedule_timer.application.use_cases.update_timer import update_scheduler_timer_use_case
 from app.modules.schedule_timer.domain.repository.scheduler_timer_repository import SchedulerTimerRepositoryI
 from app.modules.schedule_timer.infrastructure.dependencies.dependencies import get_scheduler_timer_repository
+from app.services.check_user_superadmin import check_if_user_superadmin
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +45,11 @@ async def get_scheduler_timer(
 @router.put("/timer", response_model=TimerResponse)
 async def update_scheduler_timer(
     request: UpdateTimerRequest,
-    repository: SchedulerTimerRepositoryI = Depends(get_scheduler_timer_repository)
+    repository: SchedulerTimerRepositoryI = Depends(get_scheduler_timer_repository),
+    current_user: User =  Depends(get_current_user)
 ):
+    await check_if_user_superadmin(current_user)
+    
     try:
         interval = await update_scheduler_timer_use_case(request.interval_minutes, repository)
         

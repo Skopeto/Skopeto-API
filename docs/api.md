@@ -226,6 +226,155 @@ Retrieve a specific user by their ID.
 
 ---
 
+### Update User (Self/Admin)
+
+Update user information. Users can update their own profile, while superadmins can update any user.
+
+**Endpoint:** `PATCH /users/{user_id}`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `user_id`: Integer ID of the user to update
+
+**Request Body:**
+
+All fields are optional - only provide the fields you want to update:
+
+```json
+{
+  "user_name": "johndoe_updated",
+  "first_name": "John",
+  "last_name": "Smith",
+  "email": "newemail@example.com",
+  "password": "NewSecurePass123!",
+  "roles": ["admin", "user"]
+}
+```
+
+**Field Details:**
+- `user_name`: Updated username (optional)
+- `first_name`: Updated first name (optional)
+- `last_name`: Updated last name (optional)
+- `email`: Updated email address (optional)
+- `password`: New password (optional, will be hashed)
+- `roles`: Updated user roles (optional, requires superadmin privileges)
+
+**Authorization Rules:**
+- Users can update their own profile (except roles)
+- Only superadmins can update other users
+- Only superadmins can modify user roles
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "user_name": "johndoe_updated",
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "newemail@example.com",
+    "roles": ["admin"],
+    "is_active": true,
+    "is_superuser": false,
+    "created_at": "2025-12-20T10:00:00Z",
+    "updated_at": "2026-01-26T10:00:00Z"
+  }
+}
+```
+
+**Error Response (404 Not Found):**
+
+```json
+{
+  "error": "User not found"
+}
+```
+
+**Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "Access denied: insufficient privileges"
+}
+```
+
+---
+
+### Manage User (Superadmin Only)
+
+Update user information with full superadmin privileges. This endpoint allows complete user management including role changes.
+
+**Endpoint:** `PATCH /users/manage/{user_id}`
+
+**Authentication:** Required (Superadmin only)
+
+**Path Parameters:**
+- `user_id`: Integer ID of the user to update
+
+**Request Body:**
+
+All fields are optional - only provide the fields you want to update:
+
+```json
+{
+  "user_name": "johndoe_managed",
+  "first_name": "John",
+  "last_name": "Administrator",
+  "email": "admin@example.com",
+  "password": "AdminSecurePass123!",
+  "roles": ["superadmin"],
+  "is_active": false,
+  "is_superuser": true
+}
+```
+
+**Field Details:**
+- `user_name`: Updated username (optional)
+- `first_name`: Updated first name (optional)
+- `last_name`: Updated last name (optional)
+- `email`: Updated email address (optional)
+- `password`: New password (optional, will be hashed)
+- `roles`: Updated user roles (optional)
+- `is_active`: Enable/disable user account (optional)
+- `is_superuser`: Grant/revoke superuser privileges (optional)
+
+**Authorization Rules:**
+- Only superadmins can access this endpoint
+- Allows full control over user accounts and privileges
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "user_name": "johndoe_managed",
+    "first_name": "John",
+    "last_name": "Administrator",
+    "email": "admin@example.com",
+    "roles": ["superadmin"],
+    "is_active": false,
+    "is_superuser": true,
+    "created_at": "2025-12-20T10:00:00Z",
+    "updated_at": "2026-01-26T10:00:00Z"
+  }
+}
+```
+
+**Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "Access denied: superadmin privileges required"
+}
+```
+
+---
+
 ## Server Endpoints
 
 ### Create Server
@@ -1408,256 +1557,6 @@ Validation errors return details about which fields failed validation:
 ## Rate Limiting
 
 Currently, there are no rate limits enforced. This may change in future versions.
-
----
-
-## Examples
-
-### Complete Authentication Flow
-
-**1. Register a new user:**
-
-```bash
-curl -X POST http://localhost:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_name": "johndoe",
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john@example.com",
-    "password": "SecurePass123!",
-    "user_type": "admin"
-  }'
-```
-
-**2. Login to get access token:**
-
-```bash
-curl -X POST http://localhost:8000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "johndoe",
-    "password": "SecurePass123!"
-  }'
-```
-
-**3. List all users:**
-
-```bash
-curl -X GET http://localhost:8000/users \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**4. Get user by ID:**
-
-```bash
-curl -X GET http://localhost:8000/users/1 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**5. Use token to create a server:**
-
-```bash
-curl -X POST http://localhost:8000/servers \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -d '{
-    "registrator_id": 1,
-    "name": "root",
-    "password": "serverPassword123",
-    "ip_address": "192.168.1.100",
-    "port": 22,
-    "status": "inactive"
-  }'
-```
-
-**6. List all servers:**
-
-```bash
-curl -X GET http://localhost:8000/servers \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**7. Collect container metrics for a server:**
-
-```bash
-curl -X POST http://localhost:8000/containers/1/collect \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**8. List all containers:**
-
-```bash
-curl -X GET http://localhost:8000/containers \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**9. Update server:**
-
-```bash
-curl -X PATCH http://localhost:8000/servers/1 \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -d '{
-    "port": 2222,
-    "status": "up"
-  }'
-```
-
-**10. Delete server:**
-
-```bash
-curl -X DELETE http://localhost:8000/servers/1 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**11. Collect all monitoring data:**
-
-```bash
-curl -X POST http://localhost:8000/monitoring/collect \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**12. Get database health:**
-
-```bash
-curl -X GET http://localhost:8000/databases/health \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**13. Get database health for specific server:**
-
-```bash
-curl -X GET http://localhost:8000/databases/health/1 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**14. Create database:**
-
-```bash
-curl -X POST http://localhost:8000/databases \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -d '{
-    "server_id": 1,
-    "database_type": "postgresql",
-    "name": "production_db",
-    "host": "192.168.1.100",
-    "port": 5432,
-    "username": "dbuser",
-    "password": "dbpassword"
-  }'
-```
-
-**14. Update database:**
-
-```bash
-curl -X PATCH http://localhost:8000/databases/1 \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -d '{
-    "port": 5433,
-    "username": "new_dbuser"
-  }'
-```
-
-**15. Delete database:**
-
-```bash
-curl -X DELETE http://localhost:8000/databases/1 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**16. Register notification subscriber:**
-
-```bash
-curl -X POST http://localhost:8000/notifications/subscriber \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -d '{
-    "user_id": 1,
-    "user_name": "johndoe",
-    "first_name": "John",
-    "last_name": "Doe",
-    "delivery_address_email": "john@example.com",
-    "notification_channel": "email",
-    "slack_webhook_url": null
-  }'
-```
-
-**17. List notification subscribers:**
-
-```bash
-curl -X GET http://localhost:8000/notifications/subscribers \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**18. Update notification subscriber:**
-
-```bash
-curl -X PATCH http://localhost:8000/notifications/subscribers/1 \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -d '{
-    "is_active": false
-  }'
-```
-
-**19. Delete notification subscriber:**
-
-```bash
-curl -X DELETE http://localhost:8000/notifications/subscribers/1 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**20. Mark notification as read:**
-
-```bash
-curl -X POST http://localhost:8000/notifications/markAsRead/5 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**21. Delete notification:**
-
-```bash
-curl -X DELETE http://localhost:8000/notifications/3 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**22. Get user notifications:**
-
-```bash
-curl -X GET http://localhost:8000/notifications/user/1 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**23. Get scheduler timer:**
-
-```bash
-curl -X GET http://localhost:8000/scheduler/timer \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**24. Update scheduler timer:**
-
-```bash
-curl -X PUT http://localhost:8000/scheduler/timer \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -d '{
-    "interval_minutes": 10
-  }'
-```
-
-**25. Connect to interactive shell (WebSocket):**
-
-```bash
-# Using websocat (install with: cargo install websocat)
-websocat ws://localhost:8000/ws/shell/1
-
-# Or using wscat (install with: npm install -g wscat)
-wscat -c ws://localhost:8000/ws/shell/1
-```
 
 ---
 

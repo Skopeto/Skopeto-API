@@ -42,6 +42,15 @@ reportUnknownParameterType = false
 reportUnknownVariableType = false
 reportUnknownMemberType = false
 reportMissingTypeStubs = false
+venvPath = "."
+venv = ".venv"
+exclude = [
+    "**/__pycache__",
+    "**/node_modules",
+    "**/.*",
+    ".venv",
+    "migrations"
+]
 
 [dependency-groups]
 dev = [

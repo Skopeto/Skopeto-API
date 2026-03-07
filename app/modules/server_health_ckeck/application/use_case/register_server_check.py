@@ -13,7 +13,7 @@ async def register_server_check(
     repository: ServerCheckRepositoryInterface
 )-> ServerCheck:
 
-    id = get_next_id(repository, "health_check_id_seq")
+    id = await get_next_id(repository, "health_check_id_seq")
     if not id:
         raise Exception("Failed to get next id for health check")
     

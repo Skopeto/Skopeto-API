@@ -4,7 +4,7 @@ from app.modules.server_health_ckeck.domain.entity.heallth_check import ServerCh
 
 class ServerCheckRepositoryInterface(ABC):
     @abstractmethod
-    async def create_server_check(self, server_check: ServerCheck) -> ServerCheck:
+    async def create_server_check(self, server_check: ServerCheck) -> None:
         pass
 
     @abstractmethod
@@ -12,7 +12,7 @@ class ServerCheckRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def update_server_check(self, server_check: ServerCheck) -> ServerCheck:
+    async def update_server_check(self, server_check: ServerCheck) -> None:
         pass
 
     @abstractmethod

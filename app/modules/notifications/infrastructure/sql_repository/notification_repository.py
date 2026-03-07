@@ -9,7 +9,6 @@ from app.modules.notifications.domain.entity.notification_subscriber import Noti
 from app.modules.notifications.domain.repository.notification_repository_interface import NotificationRepositoryInterface
 from app.modules.notifications.infrastructure.sql_query.notification_query import create_notification_query, delete_notification_query, delete_notification_subscriber_query, get_active_subscribers_query, get_notification_by_id_query, get_subscriber_by_id_query, get_subscribers_query, mark_notification_as_read_query, persist_notification_subscriber_query, update_notification_subscriber_query
 
-
 logger = logging.getLogger(__name__)
 
 def notification_from_db(row: dict[str, Any] | None) -> Notification | None:

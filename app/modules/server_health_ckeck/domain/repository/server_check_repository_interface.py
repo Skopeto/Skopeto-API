@@ -8,7 +8,7 @@ class ServerCheckRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_server_checks(self) -> list[ServerCheck | None]:
+    async def get_server_checks(self) -> list[ServerCheck]:
         pass
 
     # @abstractmethod

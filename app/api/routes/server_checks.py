@@ -30,39 +30,3 @@ async def list_server_checks(
     """Get all registered server health checks."""
     checks = await repository.get_server_checks()
     return {"status": "success", "data": checks}
-
-
-@router.patch('/{check_id}')
-async def update_server_check(
-    check_id: int,
-    request: RegisterServerCheckRequest,
-    current_user: User = Depends(get_current_user),
-    repository: ServerCheckRepositoryInterface = Depends(get_server_check_repository),
-):
-    """Update server health check details."""
-    # Note: You'll need to implement an update use case
-    # This is a placeholder following the pattern
-    from app.modules.server_health_ckeck.domain.entity.heallth_check import ServerCheck
-
-    server_check = ServerCheck(
-        health_check_id=check_id,
-        name=request.name,
-        command=request.command,
-        threshold=request.threshold,
-        operator=request.operator,
-        check_status=request.check_status if hasattr(request, 'check_status') else None
-    )
-
-    await repository.update_server_check(server_check)
-    return {"status": "success", "data": server_check}
-
-
-@router.delete('/{check_id}')
-async def delete_server_check(
-    check_id: int,
-    current_user: User = Depends(get_current_user),
-    repository: ServerCheckRepositoryInterface = Depends(get_server_check_repository),
-):
-    """Delete a server health check."""
-    await repository.delete_server_check(str(check_id))
-    return {"status": "success"}

@@ -1,27 +1,27 @@
 from fastapi import APIRouter, Depends
 import logging
-from pydantic import BaseModel
+from app.modules.auth.domain.entity.user import User
+from app.core.security import get_current_user
 from app.modules.database_registry.application.request.register_database_request import (
     RegisterDatabaseRequest,
 )
 from app.modules.database_registry.application.request.update_database_request import (
     UpdateDatabaseRequest,
 )
-from app.modules.database_registry.application.service.database_connector import (
-    DatabaseConnector,
-)
-from app.modules.database_registry.application.service.database_metrics_service import (
-    DatabaseMetricsServiceInterface,
-)
-from app.modules.database_registry.application.use_case.collect_database_health import (
-    collect_databases_for_server_use_case,
-    DatabaseWithHealth,
+from app.modules.database_registry.application.service.database_health_orchestration_service import (
+    DatabaseHealthOrchestrationServiceInterface,
 )
 from app.modules.database_registry.application.use_case.delete_database import (
     delete_database_use_case,
 )
 from app.modules.database_registry.application.use_case.edit_database import (
     edit_database_use_case,
+)
+from app.modules.database_registry.application.use_case.get_all_databases_with_health import (
+    get_all_databases_with_health_use_case,
+)
+from app.modules.database_registry.application.use_case.get_server_databases_with_health import (
+    get_server_databases_with_health_use_case,
 )
 from app.modules.database_registry.application.use_case.register_database import (
     register_database_use_case,
@@ -30,24 +30,8 @@ from app.modules.database_registry.domain.repository.database_repository import 
     DatabaseRepositoryInterface,
 )
 from app.modules.database_registry.infrastructure.dependencies.dependencies import (
-    get_database_connector,
-    get_database_metrics_service,
+    get_database_health_orchestration_service,
     get_database_repository,
-)
-from app.modules.server_registry.application.service.server_metrics_service import (
-    ServerMetricsServiceInterface,
-)
-from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
-from app.modules.server_registry.domain.entity.server import Server
-from app.modules.server_registry.domain.entity.server_health import ServerHealth
-from app.modules.server_registry.domain.repository.server_repository import (
-    ServerRepositoryInterface,
-)
-from app.modules.auth.domain.entity.user import User
-from app.core.security import get_current_user
-from app.modules.server_registry.infrastructure.dependencies.dependencies import (
-    get_server_metrics_service,
-    get_server_repository,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,104 +39,34 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/databases", tags=["Databases"])
 
 
-class ServerAndDatabaseHealthResponse(BaseModel):
-    server: Server
-    current_health: ServerHealth
-    databases: list[DatabaseWithHealth]
-
 @router.get("/health")
 async def get_databases_health(
-    database_metrics: DatabaseMetricsServiceInterface = Depends(
-        get_database_metrics_service
-    ),
-    connector: DatabaseConnector = Depends(get_database_connector),
-    database_repo: DatabaseRepositoryInterface = Depends(get_database_repository),
-    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
-    server_metrics: ServerMetricsServiceInterface = Depends(get_server_metrics_service),
     current_user: User = Depends(get_current_user),
+    orchestration_service: DatabaseHealthOrchestrationServiceInterface = Depends(
+        get_database_health_orchestration_service
+    ),
 ):
     """
     Collects database health for all servers and their databases.
     Used for: Database tab refresh
     """
-    results = []
-    servers = await server_repo.get_all_servers()
-
-    for server in servers:
-        if server.id is None:
-            continue
-
-        # Get server health (server module)
-        server_health = await collect_server_metrics_use_case(
-            server.id,
-            server_repo,
-            server_metrics
-        )
-
-        # Get databases with health (database module - pass only server_id)
-        databases = await collect_databases_for_server_use_case(
-            server.id,
-            database_repo,
-            database_metrics,
-            connector,
-        )
-
-        # Combine results (orchestration)
-        results.append(
-            ServerAndDatabaseHealthResponse(
-                server=server,
-                current_health=server_health,
-                databases=databases,
-            )
-        )
-
+    results = await get_all_databases_with_health_use_case(orchestration_service)
     return {"status": "success", "data": results}
 
 @router.get("/health/{server_id}")
 async def get_database_health(
     server_id: int,
-    database_metrics: DatabaseMetricsServiceInterface = Depends(
-        get_database_metrics_service
-    ),
-    connector: DatabaseConnector = Depends(get_database_connector),
-    database_repo: DatabaseRepositoryInterface = Depends(get_database_repository),
-    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
-    server_metrics: ServerMetricsServiceInterface = Depends(get_server_metrics_service),
     current_user: User = Depends(get_current_user),
+    orchestration_service: DatabaseHealthOrchestrationServiceInterface = Depends(
+        get_database_health_orchestration_service
+    ),
 ):
     """
-    Collects database health for all servers and their databases.
-    Used for: Database tab refresh
+    Collects database health for a specific server and its databases.
+    Used for: Database tab refresh (single server)
     """
-    results = []
-    server = await server_repo.get_server(server_id)
-    if server is None or server.id is None:
-        return {"status": "error", "data": results}
-    # Get server health (server module)
-    server_health = await collect_server_metrics_use_case(
-        server.id,
-        server_repo,
-        server_metrics
-    )
-
-    # Get databases with health (database module - pass only server_id)
-    databases = await collect_databases_for_server_use_case(
-        server.id,
-        database_repo,
-        database_metrics,
-        connector,
-    )
-
-    # Combine results (orchestration)
-    results.append(
-        ServerAndDatabaseHealthResponse(
-            server=server,
-            current_health=server_health,
-            databases=databases,
-        )
-    )
-
-    return {"status": "success", "data": results}
+    result = await get_server_databases_with_health_use_case(server_id, orchestration_service)
+    return {"status": "success", "data": result}
 
 @router.post("")
 async def create_database(

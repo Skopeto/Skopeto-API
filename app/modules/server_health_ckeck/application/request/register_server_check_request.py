@@ -1,6 +1,7 @@
+from pydantic import BaseModel
 
 
-class RegisterServerCheckRequest:
+class RegisterServerCheckRequest(BaseModel):
     name: str
     command: str
     threshold: int

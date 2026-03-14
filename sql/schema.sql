@@ -65,6 +65,7 @@ ALTER TABLE IF EXISTS ONLY public.users DROP CONSTRAINT IF EXISTS users_email_ke
 ALTER TABLE IF EXISTS ONLY public.notification_subscribers DROP CONSTRAINT IF EXISTS uq_notification_subscribers;
 ALTER TABLE IF EXISTS ONLY public.docker_containers DROP CONSTRAINT IF EXISTS uq_docker_containers;
 ALTER TABLE IF EXISTS ONLY public.servers DROP CONSTRAINT IF EXISTS servers_pkey;
+ALTER TABLE IF EXISTS ONLY public.server_checks DROP CONSTRAINT IF EXISTS server_checks_pkey;
 ALTER TABLE IF EXISTS ONLY public.server_history DROP CONSTRAINT IF EXISTS server_history_pkey;
 ALTER TABLE IF EXISTS ONLY public.server_health DROP CONSTRAINT IF EXISTS server_health_pkey;
 ALTER TABLE IF EXISTS ONLY public.scheduler_timer DROP CONSTRAINT IF EXISTS scheduler_timer_pkey;
@@ -75,6 +76,7 @@ ALTER TABLE IF EXISTS ONLY public.databases DROP CONSTRAINT IF EXISTS databases_
 ALTER TABLE IF EXISTS ONLY public.database_health DROP CONSTRAINT IF EXISTS database_health_pkey;
 ALTER TABLE IF EXISTS public.users ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS public.servers ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.server_checks ALTER COLUMN health_check_id DROP DEFAULT;
 ALTER TABLE IF EXISTS public.server_history ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS public.server_health ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS public.scheduler_timer ALTER COLUMN id DROP DEFAULT;
@@ -87,6 +89,8 @@ DROP SEQUENCE IF EXISTS public.users_id_seq;
 DROP TABLE IF EXISTS public.users;
 DROP SEQUENCE IF EXISTS public.servers_id_seq;
 DROP TABLE IF EXISTS public.servers;
+DROP SEQUENCE IF EXISTS public.health_check_id_seq;
+DROP TABLE IF EXISTS public.server_checks;
 DROP SEQUENCE IF EXISTS public.server_history_id_seq;
 DROP TABLE IF EXISTS public.server_history;
 DROP SEQUENCE IF EXISTS public.server_health_id_seq;
@@ -678,6 +682,71 @@ ALTER SEQUENCE public.servers_id_seq OWNED BY public.servers.id;
 
 
 --
+-- Name: server_checks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.server_checks (
+    health_check_id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    command text NOT NULL,
+    threshold integer NOT NULL,
+    operator character varying(10) NOT NULL,
+    check_status character varying(20) DEFAULT 'active'::character varying NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_server_checks_status CHECK (((check_status)::text = ANY ((ARRAY['active'::character varying, 'inactive'::character varying])::text[]))),
+    CONSTRAINT chk_server_checks_operator CHECK (((operator)::text = ANY ((ARRAY['>'::character varying, '<'::character varying, '='::character varying, '>='::character varying, '<='::character varying, '!='::character varying])::text[])))
+);
+
+
+--
+-- Name: TABLE server_checks; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.server_checks IS 'Stores custom health check configurations for servers';
+
+
+--
+-- Name: COLUMN server_checks.command; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.server_checks.command IS 'Shell command to execute on the server for health check';
+
+
+--
+-- Name: COLUMN server_checks.threshold; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.server_checks.threshold IS 'Threshold value to compare command output against using the operator';
+
+
+--
+-- Name: COLUMN server_checks.operator; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.server_checks.operator IS 'Comparison operator for threshold evaluation';
+
+
+--
+-- Name: health_check_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.health_check_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: health_check_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.health_check_id_seq OWNED BY public.server_checks.health_check_id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -794,6 +863,13 @@ ALTER TABLE ONLY public.servers ALTER COLUMN id SET DEFAULT nextval('public.serv
 
 
 --
+-- Name: server_checks health_check_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.server_checks ALTER COLUMN health_check_id SET DEFAULT nextval('public.health_check_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -870,6 +946,14 @@ ALTER TABLE ONLY public.server_history
 
 ALTER TABLE ONLY public.servers
     ADD CONSTRAINT servers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: server_checks server_checks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.server_checks
+    ADD CONSTRAINT server_checks_pkey PRIMARY KEY (health_check_id);
 
 
 --

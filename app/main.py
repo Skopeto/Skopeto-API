@@ -3,7 +3,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.api.routes import auth, notifications, scheduler, servers, containers, databases, monitoring, shell, users
+from app.api.routes import auth, notifications, scheduler, servers, containers, databases, monitoring, shell, users, server_checks
 from app.core.Exception import AppBaseException
 from app.core.scheduler import start_scheduler, stop_scheduler
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,6 +49,7 @@ async def app_exception_handler(request: Request, exc: AppBaseException):
 
 app.include_router(auth.router)
 app.include_router(servers.router)
+app.include_router(server_checks.router)
 app.include_router(containers.router)
 app.include_router(databases.router)
 app.include_router(monitoring.router)

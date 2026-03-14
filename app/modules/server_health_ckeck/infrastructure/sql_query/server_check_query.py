@@ -16,3 +16,13 @@ def create_server_check_query(server_check: ServerCheck)->tuple[str, dict[str, A
             "check_status": server_check.check_status
         }
         return query, params
+
+
+def get_server_checks_query() -> tuple[str, dict[str, Any]]:
+    query = """
+    SELECT health_check_id, name, command, threshold, operator, check_status
+    FROM server_checks
+    ORDER BY health_check_id
+    """
+    params: dict[str, Any] = {}
+    return query, params

@@ -11,10 +11,10 @@ class ServerCheckRepositoryInterface(ABC):
     async def get_server_checks(self) -> list[ServerCheck | None]:
         pass
 
-    @abstractmethod
-    async def update_server_check(self, server_check: ServerCheck) -> None:
-        pass
+    # @abstractmethod
+    # async def update_server_check(self, server_check: ServerCheck) -> None:
+    #     pass
 
-    @abstractmethod
-    async def delete_server_check(self, health_check_id: str) -> None:
-        pass
+    # @abstractmethod
+    # async def delete_server_check(self, health_check_id: str) -> None:
+    #     pass

@@ -1,9 +1,8 @@
 from app.core.sql_query import SqlQuery
 
 async def get_next_id(repo, seq_name: str) -> int:
-    query =  f"""
-    SELECT {seq_name}.NEXTVAL AS NEXT_ID
-    FROM DUAL
+    query = f"""
+    SELECT nextval('{seq_name}') AS next_id
     """
 
     sql_query = SqlQuery(repo.session, query, {})

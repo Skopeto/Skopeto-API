@@ -1,25 +1,4 @@
 services:
-  # PostgreSQL Database Service
-  postgres-db:
-    image: postgres:16-alpine
-    container_name: servermonitor_postgres
-    environment:
-      - POSTGRES_USER=${DB_USER:-servermonitor}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-PostgresPassword123}
-      - POSTGRES_DB=${DB_NAME:-servermonitor}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-servermonitor}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      - servermonitor-network
-
   # FastAPI Application Service
   api:
     build:
@@ -27,29 +6,16 @@ services:
       dockerfile: Dockerfile
     container_name: servermonitor_api
     env_file:
-    - .env
+      - .env
     ports:
       - "8000:8000"
-    environment:
-      - DB_USER=${DB_USER:-servermonitor}
-      - DB_PASSWORD=${DB_PASSWORD:-PostgresPassword123}
-      - DB_HOST=postgres-db
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME:-servermonitor}
     volumes:
       - ./app:/app/app
       - ./logs:/app/logs
-    depends_on:
-      postgres-db:
-        condition: service_healthy
     networks:
       - servermonitor-network
     restart: unless-stopped
     command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
-volumes:
-  postgres-data:
-    driver: local
 
 networks:
   servermonitor-network:

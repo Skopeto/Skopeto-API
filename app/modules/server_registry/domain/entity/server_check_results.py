@@ -8,12 +8,12 @@ class HealthStatus(str, Enum):
     OFFLINE = "offline"
     ERROR = "error"
     
-class ServerHealth(BaseModel):
+class ServerCheckResults(BaseModel):
     id: int | None = None
     server_id: int
     status: HealthStatus
-    cpu_usage: float | None = None
-    memory_usage: float | None = None
-    disk_usage: float | None = None
-    uptime: str | None = None
+    check_name: str
+    value: float
+    unit: str | None = None
+    uptime: float | None = None
     checked_at: datetime

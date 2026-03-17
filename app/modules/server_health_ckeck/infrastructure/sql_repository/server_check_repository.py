@@ -16,6 +16,7 @@ def server_check_from_db(row: dict[str, Any]) -> ServerCheck:
         command=row['command'],
         threshold=row['threshold'],
         operator=row['operator'],
+        unit=row['unit'],
         check_status=row['check_status']
     )
 

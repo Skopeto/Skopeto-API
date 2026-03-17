@@ -7,4 +7,5 @@ class ServerCheck(BaseModel):
     command: str
     threshold: int
     operator: str
+    unit: str | None = None
     check_status: HealthCheckStatus

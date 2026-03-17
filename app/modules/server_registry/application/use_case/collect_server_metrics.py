@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 from app.core.Exception import ApplicationException, SSHConnectionException
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsServiceInterface
-from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
+from app.modules.server_registry.domain.entity.server_check_results import ServerCheckResults, HealthStatus
 from app.modules.server_registry.domain.entity.server_history import HealthStatushistory, ServerHistory
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
 
@@ -12,14 +12,15 @@ async def collect_server_metrics_use_case(
     server_id: int,
     server_repository: ServerRepositoryInterface,
     server_metrics_service: ServerMetricsServiceInterface
-) -> ServerHealth:
+) -> ServerCheckResults:
     
     server = await server_repository.get_server(server_id)
     if not server:
         raise ApplicationException(f"Server {server_id} not found")
     
     try:
-        metrics = await server_metrics_service.get_server_metrics(server)
+        server_checks = await server_repository.get_server_checks(server_id)
+        metrics = await server_metrics_service.get_server_metrics(server=server, server_checks=server_checks)
         
         metrics_status = metrics.get('status', 'up')
         if metrics_status == 'timeout':
@@ -35,54 +36,58 @@ async def collect_server_metrics_use_case(
             health_status = HealthStatus.UNHEALTHY
             history_status = HealthStatushistory.UNHEALTHY
         
-        server_health = ServerHealth(
+        server_check_results = ServerCheckResults(
             server_id=server_id,
             status=health_status,
-            cpu_usage=metrics.get('cpu_usage'),
-            memory_usage=metrics.get('memory_usage'),
-            disk_usage=metrics.get('disk_usage'),
+            check_name=metrics.get('check_name', 'unknown'),
+            unit=metrics.get('unit'),
             uptime=metrics.get('uptime'),
             checked_at=datetime.now(timezone.utc)
         )
         server_history = ServerHistory(
             server_id=server_id,
             status=history_status,
-            cpu_usage=metrics.get('cpu_usage'),
-            memory_usage=metrics.get('memory_usage'),
-            disk_usage=metrics.get('disk_usage'),
             uptime=metrics.get('uptime'),
             checked_at=datetime.now(timezone.utc)
         )
     except SSHConnectionException:
-        server_health = ServerHealth(
+        server_check_results = ServerCheckResults(
             server_id=server_id,
             status=HealthStatus.OFFLINE,
+            check_name='unknown',
+            unit=None,
+            uptime=None,
             checked_at=datetime.now(timezone.utc)
         )
         server_history = ServerHistory(
             server_id=server_id,
             status=HealthStatushistory.OFFLINE,
+            uptime=None,
             checked_at=datetime.now(timezone.utc)
         )
     except Exception as e:
         logger.error(f"Failed to collect metrics for {server.ip_address}: {e}", exc_info=True)
-        server_health = ServerHealth(
+        server_check_results = ServerCheckResults(
             server_id=server_id,
             status=HealthStatus.ERROR,
+            check_name='unknown',
+            unit=None,
+            uptime=None,
             checked_at=datetime.now(timezone.utc)
         )
         server_history = ServerHistory(
             server_id=server_id,
             status=HealthStatushistory.ERROR,
+            uptime=None,
             checked_at=datetime.now(timezone.utc)
         )
     
-    existing = await server_repository.get_server_health(server_id)
+    existing = await server_repository.get_server_check_results(server_id)
     if existing:
-        await server_repository.update_server_health(server_id, server_health)
+        await server_repository.update_server_check_results(server_id, server_check_results)
     else:
-        await server_repository.persist_server_health(server_health)
+        await server_repository.persist_server_check_results(server_check_results)
     
     await server_repository.persist_server_health_history(server_history)
     
-    return server_health
+    return server_check_results

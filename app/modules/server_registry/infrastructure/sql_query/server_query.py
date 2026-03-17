@@ -1,7 +1,7 @@
 from typing import Any
 
 from app.modules.server_registry.domain.entity.server import Server
-from app.modules.server_registry.domain.entity.server_health import ServerHealth
+from app.modules.server_registry.domain.entity.server_check_results import ServerCheckResults
 from app.modules.server_registry.domain.entity.server_history import ServerHistory
 
 def get_server_query(server_id: int) -> tuple[str, dict[str, Any]]:
@@ -41,52 +41,48 @@ def create_server_query(server: Server) -> tuple[str, dict[str, Any]]:
         }
     return query, params
 
-def create_server_health_query(server_health: ServerHealth) -> tuple[str, dict[str, Any]]:
+def create_server_check_results_query(server_check_results: ServerCheckResults) -> tuple[str, dict[str, Any]]:
     query = """
-    INSERT INTO server_health (
+    INSERT INTO server_check_results (
         server_id,
         status,
-        cpu_usage,
-        memory_usage,
-        disk_usage,
+        check_name,
+        unit,
         uptime,
         checked_at
     )
     VALUES (
-        :server_id, :status, :cpu_usage, :memory_usage, :disk_usage, :uptime, :checked_at
+        :server_id, :status, :check_name, :unit, :uptime, :checked_at
     )
     """
     params = {
-        'server_id': server_health.server_id,
-        'status': server_health.status.value,
-        'cpu_usage': server_health.cpu_usage,
-        'memory_usage': server_health.memory_usage,
-        'disk_usage': server_health.disk_usage,
-        'uptime': server_health.uptime,
-        'checked_at': server_health.checked_at.replace(tzinfo=None) if server_health.checked_at else None
+        'server_id': server_check_results.server_id,
+        'status': server_check_results.status.value,
+        'check_name': server_check_results.check_name,
+        'unit': server_check_results.unit,
+        'uptime': server_check_results.uptime,
+        'checked_at': server_check_results.checked_at.replace(tzinfo=None) if server_check_results.checked_at else None
     }
     return query, params
 
-def update_server_health_query(server_id: int, server_health: ServerHealth) -> tuple[str, dict[str, Any]]:
+def update_server_check_results_query(server_id: int, server_check_results: ServerCheckResults) -> tuple[str, dict[str, Any]]:
     query = """
-        UPDATE server_health
+        UPDATE server_check_results
         SET
             status = :status,
-            cpu_usage = :cpu_usage,
-            memory_usage = :memory_usage,
-            disk_usage = :disk_usage,
+            check_name = :check_name,
+            unit = :unit,
             uptime = :uptime,
             checked_at = :checked_at
         WHERE server_id = :server_id
     """
     params = {
         'server_id': server_id,
-        'status': server_health.status.value,
-        'cpu_usage': server_health.cpu_usage,
-        'memory_usage': server_health.memory_usage,
-        'disk_usage': server_health.disk_usage,
-        'uptime': server_health.uptime,
-        'checked_at': server_health.checked_at.replace(tzinfo=None) if server_health.checked_at else None
+        'status': server_check_results.status.value,
+        'check_name': server_check_results.check_name,
+        'unit': server_check_results.unit,
+        'uptime': server_check_results.uptime,
+        'checked_at': server_check_results.checked_at.replace(tzinfo=None) if server_check_results.checked_at else None
     }
     return query, params
 

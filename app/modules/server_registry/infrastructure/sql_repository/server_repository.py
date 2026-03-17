@@ -5,7 +5,7 @@ from app.core.Exception import RepositoryException
 from app.core.base_repository import SqlBaseRepository
 from app.core.sql_query import SqlQuery
 from app.modules.server_registry.domain.entity.server import Server
-from app.modules.server_registry.domain.entity.server_health import ServerHealth
+from app.modules.server_registry.domain.entity.server_check_results import ServerCheckResults
 from app.modules.server_registry.domain.entity.server_history import ServerHistory
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
 from app.modules.server_registry.infrastructure.sql_query.server_query import (
@@ -14,9 +14,7 @@ from app.modules.server_registry.infrastructure.sql_query.server_query import (
     create_server_health_query,
     delete_server_query,
     get_all_servers_query,
-    get_server_health_query,
     get_server_query,
-    update_server_health_query,
     update_server_query
 )
 
@@ -38,7 +36,7 @@ def server_from_db(row: dict[str, Any] | None) -> Server | None:
     }
     return Server.model_construct(**server_attrs)
 
-def server_health_from_db(row: dict[str, Any] | None) -> ServerHealth |None:
+def server_check_results_from_db(row: dict[str, Any] | None) -> ServerCheckResults |None:
     if not row:
         return None
 
@@ -47,17 +45,16 @@ def server_health_from_db(row: dict[str, Any] | None) -> ServerHealth |None:
     if checked_at and checked_at.tzinfo is None:
         checked_at = checked_at.replace(tzinfo=datetime.timezone.utc)
 
-    server_health_attrs = {
+    server_check_results_attrs = {
         'id' : row['id'],
         'server_id' : row['server_id'],
         'status' : row['status'],
-        'cpu_usage' : row['cpu_usage'],
-        'memory_usage' : row['memory_usage'],
-        'disk_usage' : row['disk_usage'],
+        'check_name' : row['check_name'],
+        'unit' : row['unit'],
         'uptime' : row['uptime'],
         'checked_at' : checked_at,
     }
-    return ServerHealth.model_construct(**server_health_attrs)
+    return ServerCheckResults.model_construct(**server_check_results_attrs)
 
 class SqlServerRepository(ServerRepositoryInterface, SqlBaseRepository):
     async def get_server(self, server_id: int) -> Server | None:
@@ -79,35 +76,35 @@ class SqlServerRepository(ServerRepositoryInterface, SqlBaseRepository):
             logger.error(f"Database error while saving server: {str(e)}", exc_info=True)
             raise RepositoryException("Failed to save server")
     
-    async def persist_server_health(self, server_health: ServerHealth) -> ServerHealth:
+    async def persist_server_check_results(self, server_check_results: ServerCheckResults) -> ServerCheckResults:
         try:
-            query, params = create_server_health_query(server_health)
+            query, params = create_server_health_query(server_check_results)
             sql_query = SqlQuery(self.session, query, params)
             await sql_query.persist()
-            return server_health
+            return server_check_results
         except Exception as e:
             logger.error(f"Database error while saving server health for server {server_health.server_id}: {str(e)}", exc_info=True)
             raise RepositoryException("Failed to save server health")
         
-    async def get_server_health(self, server_id: int) -> ServerHealth |None:
+    async def get_server_check_results(self, server_id: int) -> ServerCheckResults |None:
         try:
-            query, params = get_server_health_query(server_id)
+            query, params = get_server_check_results_query(server_id)
             sql_query = SqlQuery(self.session, query, params)
-            server_helath = await sql_query.fetch_one(transformer=server_health_from_db)
-            return server_helath
+            server_check_results = await sql_query.fetch_one(transformer=server_check_results_from_db)
+            return server_check_results
         except Exception as e:
-            logger.error(f"Database error while fetching server health {server_id}: {str(e)}", exc_info=True)
-            raise RepositoryException("Failed to retrieve server health")
+            logger.error(f"Database error while fetching server check results {server_id}: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to retrieve server check results")
         
-    async def update_server_health(self, server_id, server_health: ServerHealth) -> ServerHealth:
+    async def update_server_check_results(self, server_id, server_check_results: ServerCheckResults) -> ServerCheckResults:
         try:
-            query, params = update_server_health_query(server_id, server_health)
+            query, params = update_server_check_results_query(server_id, server_check_results)
             sql_query = SqlQuery(self.session, query, params)
             await sql_query.persist()
-            return server_health
+            return server_check_results
         except Exception as e:
-            logger.error(f"Database error while updating server health {server_health.server_id}: {str(e)}", exc_info=True)
-            raise RepositoryException("Failed to update server health")
+            logger.error(f"Database error while updating server check results {server_check_results.server_id}: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to update server check results")
         
     async def persist_server_health_history(self, server_history: ServerHistory) -> ServerHistory:
         try:

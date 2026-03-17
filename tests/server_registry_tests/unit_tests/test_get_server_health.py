@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 from datetime import datetime, timezone
 
 from app.modules.server_registry.application.use_case.get_server_health import get_server_health_use_case
-from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
+from app.modules.server_registry.domain.entity.server_check_results import ServerHealth, HealthStatus
 
 
 @pytest.mark.asyncio

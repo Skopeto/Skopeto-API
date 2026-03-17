@@ -4,20 +4,20 @@ from app.modules.docker_registry.application.service.docker_metrics_service impo
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
 from app.modules.server_registry.domain.entity.server import Server
-from app.modules.server_registry.domain.entity.server_health import HealthStatus, ServerHealth
+from app.modules.server_registry.domain.entity.server_check_results import HealthStatus, ServerCheckResults
 logger = logging.getLogger(__name__)
 
 async def collect_container_metrics_use_case(
     server_id: int,
     server: Server,
-    server_health: ServerHealth,
+    server_check_results: ServerCheckResults,
     docker_repository: DockerRepositoryInterface,
     docker_metrics_service: DockerMetricService
 ) -> list[DockerContainer]:
     
     containers = []
     
-    if server_health.status != HealthStatus.HEALTHY:
+    if server_check_results.status != HealthStatus.HEALTHY:
         return containers
     
     try:

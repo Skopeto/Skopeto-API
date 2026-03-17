@@ -7,13 +7,12 @@ from app.modules.database_registry.domain.repository.database_repository import 
 from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsServiceInterface
 from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
 from app.modules.server_registry.domain.entity.server import Server
-from app.modules.server_registry.domain.entity.server_health import ServerHealth
+from app.modules.server_registry.domain.entity.server_check_results import ServerCheckResults
 from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
-
 
 class ServerAndDatabaseHealthResponse(BaseModel):
     server: Server
-    current_health: ServerHealth
+    current_check_results: ServerCheckResults
     databases: list[DatabaseWithHealth]
 
 
@@ -66,7 +65,7 @@ class DatabaseHealthOrchestrationService(DatabaseHealthOrchestrationServiceInter
 
         return ServerAndDatabaseHealthResponse(
             server=server,
-            current_health=server_health,
+            current_check_results=server_health,
             databases=databases,
         )
 
@@ -95,7 +94,7 @@ class DatabaseHealthOrchestrationService(DatabaseHealthOrchestrationServiceInter
             results.append(
                 ServerAndDatabaseHealthResponse(
                     server=server,
-                    current_health=server_health,
+                    current_check_results=server_health,
                     databases=databases,
                 )
             )

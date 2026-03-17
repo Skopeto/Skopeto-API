@@ -6,7 +6,7 @@ from app.modules.docker_registry.application.use_case.collect_container_metrics 
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 from app.modules.docker_registry.domain.entity.docker_status import ContainerStatus
 from app.modules.server_registry.domain.entity.server import Server
-from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
+from app.modules.server_registry.domain.entity.server_check_results import ServerHealth, HealthStatus
 
 
 @pytest.mark.asyncio

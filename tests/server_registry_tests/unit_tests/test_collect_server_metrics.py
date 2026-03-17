@@ -4,7 +4,7 @@ from datetime import datetime
 
 from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
 from app.modules.server_registry.domain.entity.server import Server
-from app.modules.server_registry.domain.entity.server_health import ServerHealth, HealthStatus
+from app.modules.server_registry.domain.entity.server_check_results import ServerHealth, HealthStatus
 from app.core.Exception import ApplicationException, SSHConnectionException
 
 

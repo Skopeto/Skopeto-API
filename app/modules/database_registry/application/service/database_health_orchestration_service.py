@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
+from app.core.dependencies import get_ssh_client
 from app.modules.database_registry.application.service.database_connector import DatabaseConnector
 from app.modules.database_registry.application.service.database_metrics_service import DatabaseMetricsServiceInterface
 from app.modules.database_registry.application.use_case.collect_database_health import collect_databases_for_server_use_case, DatabaseWithHealth
 from app.modules.database_registry.domain.repository.database_repository import DatabaseRepositoryInterface
-from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsServiceInterface
+from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
 from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
 from app.modules.server_registry.domain.entity.server import Server
 from app.modules.server_registry.domain.entity.server_check_results import ServerCheckResults
@@ -33,13 +34,11 @@ class DatabaseHealthOrchestrationService(DatabaseHealthOrchestrationServiceInter
         self,
         server_repo: ServerRepositoryInterface,
         database_repo: DatabaseRepositoryInterface,
-        server_metrics: ServerMetricsServiceInterface,
         database_metrics: DatabaseMetricsServiceInterface,
         connector: DatabaseConnector
     ):
         self.server_repo = server_repo
         self.database_repo = database_repo
-        self.server_metrics = server_metrics
         self.database_metrics = database_metrics
         self.connector = connector
 
@@ -50,11 +49,18 @@ class DatabaseHealthOrchestrationService(DatabaseHealthOrchestrationServiceInter
         if server is None or server.id is None:
             raise ValueError(f"Server {server_id} not found")
 
-        server_health = await collect_server_metrics_use_case(
-            server.id,
-            self.server_repo,
-            self.server_metrics
-        )
+        ssh_client = get_ssh_client()
+        try:
+            await ssh_client.connect_async(server)
+            server_metrics = ServerMetricsService(ssh_client)
+
+            server_health = await collect_server_metrics_use_case(
+                server.id,
+                self.server_repo,
+                server_metrics
+            )
+        finally:
+            await ssh_client.disconnect_async()
 
         databases = await collect_databases_for_server_use_case(
             server.id,
@@ -78,11 +84,18 @@ class DatabaseHealthOrchestrationService(DatabaseHealthOrchestrationServiceInter
             if server.id is None:
                 continue
 
-            server_health = await collect_server_metrics_use_case(
-                server.id,
-                self.server_repo,
-                self.server_metrics
-            )
+            ssh_client = get_ssh_client()
+            try:
+                await ssh_client.connect_async(server)
+                server_metrics = ServerMetricsService(ssh_client)
+
+                server_health = await collect_server_metrics_use_case(
+                    server.id,
+                    self.server_repo,
+                    server_metrics
+                )
+            finally:
+                await ssh_client.disconnect_async()
 
             databases = await collect_databases_for_server_use_case(
                 server.id,

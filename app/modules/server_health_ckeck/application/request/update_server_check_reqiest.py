@@ -7,4 +7,5 @@ class UpdateServerCheckRequest(BaseModel):
     command: str
     threshold: int
     operator: str
+    unit: str
     check_status: HealthCheckStatus

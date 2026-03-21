@@ -64,6 +64,7 @@ async def list_containers(
     current_user: User = Depends(get_current_user),
     server_repo: ServerRepositoryInterface = Depends(get_server_repository),
     docker_repo: DockerRepositoryInterface = Depends(get_docker_repository),
+    server_metrics: ServerMetricsService = Depends(get_server_metrics_service),
 ):
     """
     Gets all servers with their containers and health status.
@@ -74,7 +75,7 @@ async def list_containers(
     for server in servers:
         if server.id is None:
             continue
-        server_health = await get_server_health_use_case(server.id, server_repo)
+        server_health = await get_server_health_use_case(server.id, server_repo, server_metrics)
         containers = await get_containers_use_case(server.id, docker_repo)
 
         results.append({

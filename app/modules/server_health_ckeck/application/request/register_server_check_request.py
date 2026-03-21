@@ -6,3 +6,4 @@ class RegisterServerCheckRequest(BaseModel):
     command: str
     threshold: int
     operator: str
+    unit: str

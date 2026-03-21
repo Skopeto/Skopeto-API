@@ -3,94 +3,136 @@ from unittest.mock import AsyncMock
 from datetime import datetime, timezone
 
 from app.modules.server_registry.application.use_case.get_server_health import get_server_health_use_case
-from app.modules.server_registry.domain.entity.server_check_results import ServerHealth, HealthStatus
+from app.modules.server_registry.domain.entity.server import Server
+from app.modules.server_registry.domain.entity.server_check_results import ServerCheckResults, HealthStatus
+from app.modules.server_health_ckeck.domain.entity.heallth_check import ServerCheck
+from app.modules.server_health_ckeck.domain.enum.health_check_status import HealthCheckStatus
+
+
+@pytest.fixture
+def sample_server_checks() -> list[ServerCheck]:
+    return [
+        ServerCheck(
+            health_check_id=1,
+            name="cpu_usage",
+            command="top -bn1 | grep 'Cpu(s)' | awk '{print $2}'",
+            threshold=80,
+            operator="<",
+            unit="%",
+            check_status=HealthCheckStatus.ACTIVE
+        )
+    ]
+
+
+@pytest.fixture
+def sample_check_results() -> list[ServerCheckResults]:
+    return [
+        ServerCheckResults(
+            server_id=1,
+            status=HealthStatus.HEALTHY,
+            check_name="cpu_usage",
+            value=25.5,
+            unit="%",
+            uptime=25.5,
+            checked_at=datetime.now(timezone.utc)
+        )
+    ]
 
 
 @pytest.mark.asyncio
 async def test_get_server_health_success(
     mock_server_repository: AsyncMock,
-    sample_server_health: ServerHealth
+    mock_server_metrics_service: AsyncMock,
+    sample_server: Server,
+    sample_server_checks: list[ServerCheck],
+    sample_check_results: list[ServerCheckResults]
 ):
     server_id = 1
-    mock_server_repository.get_server_health.return_value = sample_server_health
+    mock_server_repository.get_server.return_value = sample_server
+    mock_server_repository.get_server_checks.return_value = sample_server_checks
+    mock_server_metrics_service.get_server_metrics.return_value = sample_check_results
 
-    result = await get_server_health_use_case(
+    results = await get_server_health_use_case(
         server_id=server_id,
-        server_repository=mock_server_repository
+        server_repository=mock_server_repository,
+        server_metrics_service=mock_server_metrics_service
     )
 
-    assert result is not None
-    assert result.server_id == server_id
-    assert result.status == HealthStatus.HEALTHY
-    assert result.cpu_usage == 25.5
-    assert result.memory_usage == 60.2
-    assert result.disk_usage == 45.0
-    assert result.uptime == "up 5 days"
-    mock_server_repository.get_server_health.assert_called_once_with(server_id)
+    assert len(results) == 1
+    assert results[0].server_id == server_id
+    assert results[0].status == HealthStatus.HEALTHY
+    assert results[0].check_name == "cpu_usage"
+    assert results[0].value == 25.5
+    mock_server_repository.get_server.assert_called_once_with(server_id)
+    mock_server_repository.get_server_checks.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_get_server_health_not_found(
-    mock_server_repository: AsyncMock
+async def test_get_server_health_server_not_found(
+    mock_server_repository: AsyncMock,
+    mock_server_metrics_service: AsyncMock
 ):
     server_id = 999
-    mock_server_repository.get_server_health.return_value = None
+    mock_server_repository.get_server.return_value = None
 
-    result = await get_server_health_use_case(
+    results = await get_server_health_use_case(
         server_id=server_id,
-        server_repository=mock_server_repository
+        server_repository=mock_server_repository,
+        server_metrics_service=mock_server_metrics_service
     )
 
-    assert result is None
-    mock_server_repository.get_server_health.assert_called_once_with(server_id)
+    assert results == []
+    mock_server_metrics_service.get_server_metrics.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_server_health_no_checks_configured(
+    mock_server_repository: AsyncMock,
+    mock_server_metrics_service: AsyncMock,
+    sample_server: Server
+):
+    server_id = 1
+    mock_server_repository.get_server.return_value = sample_server
+    mock_server_repository.get_server_checks.return_value = []
+
+    results = await get_server_health_use_case(
+        server_id=server_id,
+        server_repository=mock_server_repository,
+        server_metrics_service=mock_server_metrics_service
+    )
+
+    assert results == []
+    mock_server_metrics_service.get_server_metrics.assert_not_called()
 
 
 @pytest.mark.asyncio
 async def test_get_server_health_offline_status(
-    mock_server_repository: AsyncMock
+    mock_server_repository: AsyncMock,
+    mock_server_metrics_service: AsyncMock,
+    sample_server: Server,
+    sample_server_checks: list[ServerCheck]
 ):
     server_id = 1
-    offline_health = ServerHealth(
+    offline_results = [
+        ServerCheckResults(
+            server_id=server_id,
+            status=HealthStatus.OFFLINE,
+            check_name="cpu_usage",
+            value=0.0,
+            unit="%",
+            uptime=None,
+            checked_at=datetime.now(timezone.utc)
+        )
+    ]
+    mock_server_repository.get_server.return_value = sample_server
+    mock_server_repository.get_server_checks.return_value = sample_server_checks
+    mock_server_metrics_service.get_server_metrics.return_value = offline_results
+
+    results = await get_server_health_use_case(
         server_id=server_id,
-        status=HealthStatus.OFFLINE,
-        cpu_usage=None,
-        memory_usage=None,
-        disk_usage=None,
-        uptime=None,
-        checked_at=datetime.now(timezone.utc)
-    )
-    mock_server_repository.get_server_health.return_value = offline_health
-
-    result = await get_server_health_use_case(
-        server_id=server_id,
-        server_repository=mock_server_repository
-    )
-
-    assert result is not None
-    assert result.status == HealthStatus.OFFLINE
-    assert result.cpu_usage is None
-    assert result.memory_usage is None
-    assert result.disk_usage is None
-    assert result.uptime is None
-
-
-@pytest.mark.asyncio
-async def test_get_server_health_error_status(
-    mock_server_repository: AsyncMock
-):
-    server_id = 1
-    error_health = ServerHealth(
-        server_id=server_id,
-        status=HealthStatus.ERROR,
-        checked_at=datetime.now(timezone.utc)
-    )
-    mock_server_repository.get_server_health.return_value = error_health
-
-    result = await get_server_health_use_case(
-        server_id=server_id,
-        server_repository=mock_server_repository
+        server_repository=mock_server_repository,
+        server_metrics_service=mock_server_metrics_service
     )
 
-    assert result is not None
-    assert result.status == HealthStatus.ERROR
-    mock_server_repository.get_server_health.assert_called_once_with(server_id)
+    assert len(results) == 1
+    assert results[0].status == HealthStatus.OFFLINE

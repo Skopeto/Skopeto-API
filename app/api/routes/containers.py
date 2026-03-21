@@ -1,19 +1,9 @@
 from fastapi import APIRouter, Depends
 import logging
-from app.core.Exception import ApplicationException
-from app.core.dependencies import get_ssh_client
-from app.modules.docker_registry.application.service.docker_metrics_service import DockerMetricService
-from app.modules.docker_registry.application.use_case.collect_container_metrics import collect_container_metrics_use_case
-from app.modules.docker_registry.application.use_case.get_containers import get_containers_use_case
-from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
-from app.modules.docker_registry.infrastructure.dependencies.dependencies import get_docker_repository
-from app.modules.server_registry.application.service.server_metrics_service import ServerMetricsService
-from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
-from app.modules.server_registry.application.use_case.get_server_health import get_server_health_use_case
-from app.modules.server_registry.domain.repository.server_repository import ServerRepositoryInterface
+from app.modules.docker_registry.application.service.container_orchestration_service import ContainerOrchestrationServiceInterface
+from app.modules.docker_registry.infrastructure.dependencies.dependencies import get_container_orchestration_service
 from app.modules.auth.domain.entity.user import User
 from app.core.security import get_current_user
-from app.modules.server_registry.infrastructure.dependencies.dependencies import get_server_repository
 
 logger = logging.getLogger(__name__)
 
@@ -24,77 +14,27 @@ router = APIRouter(prefix="/containers", tags=["Containers"])
 async def collect_container_metrics(
     server_id: int,
     current_user: User = Depends(get_current_user),
-    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
-    docker_repo: DockerRepositoryInterface = Depends(get_docker_repository),
+    orchestration_service: ContainerOrchestrationServiceInterface = Depends(
+        get_container_orchestration_service
+    ),
 ):
     """
     Collects server health and container metrics for a single server.
     """
-    server = await server_repo.get_server(server_id)
-    if not server:
-        raise ApplicationException(f"Server {server_id} not found")
-
-    ssh_client = get_ssh_client()
-    try:
-        await ssh_client.connect_async(server)
-        server_metrics = ServerMetricsService(ssh_client)
-        docker_metrics = DockerMetricService(ssh_client)
-
-        check_results = await collect_server_metrics_use_case(
-            server_id,
-            server_repo,
-            server_metrics
-        )
-
-        containers = await collect_container_metrics_use_case(
-            server,
-            check_results,
-            docker_repo,
-            docker_metrics
-        )
-
-        return {
-            "status": "success",
-            "data": {
-                "server": server,
-                "check_results": check_results,
-                "containers": containers
-            }
-        }
-    finally:
-        await ssh_client.disconnect_async()
+    result = await orchestration_service.collect_server_containers(server_id)
+    return {"status": "success", "data": result}
 
 
 @router.get("")
 async def list_containers(
     current_user: User = Depends(get_current_user),
-    server_repo: ServerRepositoryInterface = Depends(get_server_repository),
-    docker_repo: DockerRepositoryInterface = Depends(get_docker_repository),
+    orchestration_service: ContainerOrchestrationServiceInterface = Depends(
+        get_container_orchestration_service
+    ),
 ):
     """
     Gets all servers with their containers and health status.
     Used for: Container tab refresh
     """
-    results = []
-    servers = await server_repo.get_all_servers()
-    for server in servers:
-        if server.id is None:
-            continue
-
-        ssh_client = get_ssh_client()
-        try:
-            await ssh_client.connect_async(server)
-            server_metrics = ServerMetricsService(ssh_client)
-            check_results = await get_server_health_use_case(server.id, server_repo, server_metrics)
-        finally:
-            await ssh_client.disconnect_async()
-
-        containers = await get_containers_use_case(server.id, docker_repo)
-
-        results.append({
-            "server": server,
-            "check_results": check_results,
-            "containers": containers
-        })
-
+    results = await orchestration_service.get_all_servers_with_containers()
     return {"status": "success", "data": results}

@@ -35,7 +35,7 @@ async def collect_container_metrics(
     if not server:
         raise ApplicationException(f"Server {server_id} not found")
 
-    server_health = await collect_server_metrics_use_case(
+    check_results = await collect_server_metrics_use_case(
         server_id,
         server_repo,
         server_metrics
@@ -44,7 +44,7 @@ async def collect_container_metrics(
     containers = await collect_container_metrics_use_case(
         server_id,
         server,
-        server_health,
+        check_results,
         docker_repo,
         docker_metrics
     )
@@ -53,7 +53,7 @@ async def collect_container_metrics(
         "status": "success",
         "data": {
             "server": server,
-            "current_health": server_health,
+            "check_results": check_results,
             "containers": containers
         }
     }
@@ -75,12 +75,12 @@ async def list_containers(
     for server in servers:
         if server.id is None:
             continue
-        server_health = await get_server_health_use_case(server.id, server_repo, server_metrics)
+        check_results = await get_server_health_use_case(server.id, server_repo, server_metrics)
         containers = await get_containers_use_case(server.id, docker_repo)
 
         results.append({
             "server": server,
-            "server_health": server_health,
+            "check_results": check_results,
             "containers": containers
         })
 

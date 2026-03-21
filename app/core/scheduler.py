@@ -15,12 +15,14 @@ from app.modules.docker_registry.application.service.docker_metrics_service impo
 from app.modules.server_registry.application.use_case.collect_server_metrics import collect_server_metrics_use_case
 from app.modules.docker_registry.application.use_case.collect_container_metrics import collect_container_metrics_use_case
 from app.modules.server_registry.domain.entity.server import Server
+from app.modules.server_registry.domain.entity.server_check_results import HealthStatus
 from app.core.dependencies import get_ssh_client
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 scheduler = AsyncIOScheduler()
+
 
 async def scheduled_monitoring_task():
     logger.info("Starting scheduled monitoring collection...")
@@ -54,7 +56,7 @@ async def scheduled_monitoring_task():
             user_repo = SqlUserRepository(session)
 
             try:
-                server_health = await collect_server_metrics_use_case(
+                check_results = await collect_server_metrics_use_case(
                     server.id,
                     server_repo,
                     server_metrics
@@ -63,7 +65,7 @@ async def scheduled_monitoring_task():
                 containers = await collect_container_metrics_use_case(
                     server.id,
                     server,
-                    server_health,
+                    check_results,
                     docker_repo,
                     docker_metrics
                 )
@@ -74,8 +76,10 @@ async def scheduled_monitoring_task():
                     if container.status in {"exited", "dead"}:
                         alerts.append(f"Container {container.name} is {container.status} on {server.ip_address} ({server.user_name})")
 
-                if server_health.status in {"unhealthy", "offline", "error"}:
-                    alerts.append(f"Server {server.ip_address} ({server.user_name}) status: {server_health.status}")
+                # Check each server check result for unhealthy status
+                for result in check_results:
+                    if result.status in (HealthStatus.UNHEALTHY, HealthStatus.OFFLINE, HealthStatus.ERROR):
+                        alerts.append(f"Server {server.ip_address} ({server.user_name}) check '{result.check_name}': {result.status.value}")
 
                 if alerts:
                     message = "\n".join(alerts)
@@ -101,24 +105,26 @@ async def scheduled_monitoring_task():
     success_count = len([r for r in results if r is not None])
     logger.info(f"Monitoring collection completed. Processed {success_count}/{len(servers)} servers successfully")
 
+
 async def get_timer_interval() -> int:
     try:
         async with SessionManager.session_scope() as session:
             repo = SQLSchedulerTimerRepository(session)
             timer = await repo.get_timer()
-            
+
             if timer:
                 return timer.interval_minutes
-            
+
             logger.warning("No timer found, using default 5 minutes")
             return 5
     except Exception as e:
         logger.error(f"Error getting timer, using default 5 minutes: {e}")
         return 5
 
+
 async def start_scheduler():
     interval = await get_timer_interval()
-    
+
     scheduler.add_job(
         scheduled_monitoring_task,
         trigger=IntervalTrigger(minutes=interval),
@@ -126,7 +132,7 @@ async def start_scheduler():
         name='Collect server and container monitoring data',
         replace_existing=True
     )
-    
+
     scheduler.start()
     logger.info(f"Scheduler started - monitoring collection will run every {interval} minute(s)")
 
@@ -135,6 +141,7 @@ def stop_scheduler():
     if scheduler.running:
         scheduler.shutdown()
         logger.info("Scheduler stopped")
+
 
 async def update_scheduler_interval(new_interval: int):
     scheduler.reschedule_job(

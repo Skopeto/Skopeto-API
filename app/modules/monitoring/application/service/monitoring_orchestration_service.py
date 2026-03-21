@@ -41,7 +41,7 @@ class MonitoringOrchestrationService(MonitoringOrchestrationServiceInterface):
         if server.id is None:
             return None
 
-        server_health = None
+        check_results = []
         containers = []
         databases = []
 
@@ -51,7 +51,7 @@ class MonitoringOrchestrationService(MonitoringOrchestrationServiceInterface):
             database_repository = SqlDatabaseRepository(session)
 
             try:
-                server_health = await collect_server_metrics_use_case(
+                check_results = await collect_server_metrics_use_case(
                     server.id,
                     server_repository,
                     self.server_metrics
@@ -60,7 +60,7 @@ class MonitoringOrchestrationService(MonitoringOrchestrationServiceInterface):
                 containers = await collect_container_metrics_use_case(
                     server.id,
                     server,
-                    server_health,
+                    check_results,
                     docker_repository,
                     self.docker_metrics
                 )
@@ -77,7 +77,7 @@ class MonitoringOrchestrationService(MonitoringOrchestrationServiceInterface):
 
         return {
             "server": server,
-            "current_health": server_health,
+            "check_results": check_results,
             "containers": containers,
             "databases": databases
         }

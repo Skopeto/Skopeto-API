@@ -42,12 +42,11 @@ async def scheduled_monitoring_task():
         smtp_password=settings.SMTP_PASSWORD
     )
 
-    server_metrics = ServerMetricsService(get_ssh_client())
-    docker_metrics = DockerMetricService(get_ssh_client())
-
     async def collect_single_server(server: Server):
         if server.id is None:
             return None
+
+        ssh_client = get_ssh_client()
 
         async with SessionManager.session_scope() as session:
             server_repo = SqlServerRepository(session)
@@ -56,6 +55,12 @@ async def scheduled_monitoring_task():
             user_repo = SqlUserRepository(session)
 
             try:
+                async with asyncio.timeout(60):
+                    await ssh_client.connect_async(server)
+
+                server_metrics = ServerMetricsService(ssh_client)
+                docker_metrics = DockerMetricService(ssh_client)
+
                 check_results = await collect_server_metrics_use_case(
                     server.id,
                     server_repo,
@@ -63,7 +68,6 @@ async def scheduled_monitoring_task():
                 )
 
                 containers = await collect_container_metrics_use_case(
-                    server.id,
                     server,
                     check_results,
                     docker_repo,
@@ -93,9 +97,19 @@ async def scheduled_monitoring_task():
 
                 return server.id
 
+            except asyncio.TimeoutError:
+                logger.error(f"Timeout connecting to server {server.user_name} ({server.ip_address})")
+                return None
+
             except Exception as e:
                 logger.error(f"Failed to collect server {server.id}: {e}", exc_info=True)
                 return None
+
+            finally:
+                try:
+                    await ssh_client.disconnect_async()
+                except Exception as e:
+                    logger.warning(f"Failed to disconnect from {server.ip_address}: {e}")
 
     results = await asyncio.gather(
         *(collect_single_server(server) for server in servers),

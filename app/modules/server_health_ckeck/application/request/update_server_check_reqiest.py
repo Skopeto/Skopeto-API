@@ -3,9 +3,9 @@ from app.modules.server_health_ckeck.domain.enum.health_check_status import Heal
 
 
 class UpdateServerCheckRequest(BaseModel):
-    name: str
-    command: str
-    threshold: int
-    operator: str
+    name: str | None = None
+    command: str | None = None
+    threshold: int | None = None
+    operator: str | None = None
     unit: str | None = None
-    check_status: HealthCheckStatus
+    check_status: HealthCheckStatus | None = None

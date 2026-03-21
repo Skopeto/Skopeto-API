@@ -6,7 +6,7 @@ from app.core.base_repository import SqlBaseRepository
 from app.core.sql_query import SqlQuery
 from app.modules.docker_registry.domain.entity.docker_container import DockerContainer
 from app.modules.docker_registry.domain.repository.docker_repository import DockerRepositoryInterface
-from app.modules.docker_registry.infrastructure.sql_query.docker_query import create_docker_container_query, get_docker_container_query, get_docker_container_query, get_docker_containers_query, update_docker_container_query
+from app.modules.docker_registry.infrastructure.sql_query.docker_query import create_docker_container_query, get_docker_container_query, get_docker_container_query, get_docker_containers_query, update_docker_container_query, upsert_docker_containers_query
 logger = logging.getLogger(__name__)
 
 def container_from_db(row: dict[str, Any] | None) -> DockerContainer | None:
@@ -88,3 +88,17 @@ class SqlDockerRepository(DockerRepositoryInterface, SqlBaseRepository):
         except Exception as e:
             logger.error(f"Database error while fetching containers: {str(e)}", exc_info=True)
             raise RepositoryException("Failed to fetch containers")
+
+    async def upsert_docker_containers(self, containers: list[DockerContainer]) -> list[DockerContainer]:
+        if not containers:
+            return []
+
+        try:
+            query, params = upsert_docker_containers_query(containers)
+            sql_query = SqlQuery(self.session, query, params)
+            rows = await sql_query.fetch_all(transformer=container_from_db)
+            await self.session.commit()
+            return list(filter(None, rows))
+        except Exception as e:
+            logger.error(f"Database error while upserting containers: {str(e)}", exc_info=True)
+            raise RepositoryException("Failed to upsert containers")

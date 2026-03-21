@@ -100,3 +100,51 @@ def delete_all_containers_query() -> tuple[str, dict[str, Any]]:
     query = "DELETE FROM docker_containers"
     params = {}
     return query, params
+
+
+def upsert_docker_containers_query(containers: list[DockerContainer]) -> tuple[str, dict[str, Any]]:
+    if not containers:
+        return "", {}
+
+    values_list = []
+    params = {}
+
+    for i, container in enumerate(containers):
+        values_list.append(
+            f"(:server_id_{i}, :container_id_{i}, :name_{i}, :image_{i}, "
+            f":status_{i}, :ports_{i}, :exit_code_{i}, :is_healthy_{i}, CURRENT_TIMESTAMP)"
+        )
+        params[f"server_id_{i}"] = container.server_id
+        params[f"container_id_{i}"] = container.container_id
+        params[f"name_{i}"] = container.name
+        params[f"image_{i}"] = container.image
+        params[f"status_{i}"] = container.status.value
+        params[f"ports_{i}"] = container.ports
+        params[f"exit_code_{i}"] = container.exit_code
+        params[f"is_healthy_{i}"] = container.is_healthy
+
+    values_clause = ",\n        ".join(values_list)
+
+    query = f"""
+        INSERT INTO docker_containers (
+            server_id, container_id, name, image, status, ports, exit_code, is_healthy, last_seen_at
+        )
+        VALUES
+        {values_clause}
+        ON CONFLICT (server_id, name) DO UPDATE SET
+            container_id = EXCLUDED.container_id,
+            image = EXCLUDED.image,
+            status = EXCLUDED.status,
+            ports = EXCLUDED.ports,
+            exit_code = EXCLUDED.exit_code,
+            is_healthy = EXCLUDED.is_healthy,
+            last_seen_at = CURRENT_TIMESTAMP,
+            state_changed_at = CASE
+                WHEN docker_containers.status != EXCLUDED.status
+                THEN CURRENT_TIMESTAMP
+                ELSE docker_containers.state_changed_at
+            END
+        RETURNING *
+    """
+
+    return query, params

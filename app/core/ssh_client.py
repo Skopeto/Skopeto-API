@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import asyncio
 import paramiko
 from typing import Optional
 import logging
@@ -12,17 +13,29 @@ class SSHClientInterface(ABC):
     @abstractmethod
     def connect(self, server: Server) -> None:
         pass
-    
+
     @abstractmethod
     def execute_command(self, command: str) -> str:
         pass
-    
+
     @abstractmethod
     def disconnect(self) -> None:
         pass
-    
+
     @abstractmethod
     def get_shell_channel(self) -> paramiko.Channel:
+        pass
+
+    @abstractmethod
+    async def connect_async(self, server: Server) -> None:
+        pass
+
+    @abstractmethod
+    async def execute_command_async(self, command: str) -> str:
+        pass
+
+    @abstractmethod
+    async def disconnect_async(self) -> None:
         pass
 
 class SSHClient(SSHClientInterface):
@@ -110,7 +123,7 @@ class SSHClient(SSHClientInterface):
                 logger.warning(f"Error closing channel: {e}")
             finally:
                 self.channel = None
-        
+
         if self.client:
             try:
                 self.client.close()
@@ -119,3 +132,12 @@ class SSHClient(SSHClientInterface):
                 logger.warning(f"Error closing SSH client: {e}")
             finally:
                 self.client = None
+
+    async def connect_async(self, server: Server) -> None:
+        await asyncio.to_thread(self.connect, server)
+
+    async def execute_command_async(self, command: str) -> str:
+        return await asyncio.to_thread(self.execute_command, command)
+
+    async def disconnect_async(self) -> None:
+        await asyncio.to_thread(self.disconnect)

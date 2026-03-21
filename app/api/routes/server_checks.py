@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 import logging
 from app.modules.server_health_ckeck.application.request.register_server_check_request import RegisterServerCheckRequest
-from app.modules.server_health_ckeck.application.request.update_server_check_reqiest import UpdateServerCheckRequest
+from app.modules.server_health_ckeck.application.request.update_server_check_request import UpdateServerCheckRequest
 from app.modules.server_health_ckeck.application.use_case.register_server_check import register_server_check
 from app.modules.server_health_ckeck.domain.entity.heallth_check import ServerCheck
 from app.modules.server_health_ckeck.domain.repository.server_check_repository_interface import ServerCheckRepositoryInterface
@@ -62,12 +62,12 @@ async def update_server_check(
 
     server_check = ServerCheck(
         health_check_id=health_check_id,
-        name=request.name,
-        command=request.command,
-        threshold=request.threshold,
-        operator=request.operator,
-        unit=request.unit,
-        check_status=request.check_status
+        name=request.name if request.name is not None else existing.name,
+        command=request.command if request.command is not None else existing.command,
+        threshold=request.threshold if request.threshold is not None else existing.threshold,
+        operator=request.operator if request.operator is not None else existing.operator,
+        unit=request.unit if request.unit is not None else existing.unit,
+        check_status=request.check_status if request.check_status is not None else existing.check_status
     )
     updated = await repository.update_server_check(server_check)
     return {"status": "success", "data": updated}

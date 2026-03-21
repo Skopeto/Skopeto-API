@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 import logging
 from app.modules.server_health_ckeck.application.request.register_server_check_request import RegisterServerCheckRequest
 from app.modules.server_health_ckeck.application.request.update_server_check_request import UpdateServerCheckRequest
 from app.modules.server_health_ckeck.application.use_case.register_server_check import register_server_check
-from app.modules.server_health_ckeck.domain.entity.heallth_check import ServerCheck
+from app.modules.server_health_ckeck.application.use_case.delete_server_check import delete_server_check_use_case
+from app.modules.server_health_ckeck.application.use_case.get_server_check import get_server_check_use_case
+from app.modules.server_health_ckeck.application.use_case.update_server_check import update_server_check_use_case
 from app.modules.server_health_ckeck.domain.repository.server_check_repository_interface import ServerCheckRepositoryInterface
 from app.modules.auth.domain.entity.user import User
 from app.core.security import get_current_user
@@ -42,9 +44,7 @@ async def get_server_check(
     repository: ServerCheckRepositoryInterface = Depends(get_server_check_repository),
 ):
     """Get a specific server health check by ID."""
-    check = await repository.get_server_check(health_check_id)
-    if not check:
-        raise HTTPException(status_code=404, detail=f"Server check {health_check_id} not found")
+    check = await get_server_check_use_case(health_check_id, repository)
     return {"status": "success", "data": check}
 
 
@@ -56,20 +56,7 @@ async def update_server_check(
     repository: ServerCheckRepositoryInterface = Depends(get_server_check_repository),
 ):
     """Update an existing server health check."""
-    existing = await repository.get_server_check(health_check_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail=f"Server check {health_check_id} not found")
-
-    server_check = ServerCheck(
-        health_check_id=health_check_id,
-        name=request.name if request.name is not None else existing.name,
-        command=request.command if request.command is not None else existing.command,
-        threshold=request.threshold if request.threshold is not None else existing.threshold,
-        operator=request.operator if request.operator is not None else existing.operator,
-        unit=request.unit if request.unit is not None else existing.unit,
-        check_status=request.check_status if request.check_status is not None else existing.check_status
-    )
-    updated = await repository.update_server_check(server_check)
+    updated = await update_server_check_use_case(health_check_id, request, repository)
     return {"status": "success", "data": updated}
 
 
@@ -80,9 +67,5 @@ async def delete_server_check(
     repository: ServerCheckRepositoryInterface = Depends(get_server_check_repository),
 ):
     """Delete a server health check."""
-    existing = await repository.get_server_check(health_check_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail=f"Server check {health_check_id} not found")
-
-    await repository.delete_server_check(health_check_id)
+    await delete_server_check_use_case(health_check_id, repository)
     return None
